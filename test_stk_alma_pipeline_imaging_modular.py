@@ -113,8 +113,7 @@ try:
     from casatasks.private.imagerhelpers.parallel_imager_helper import PyParallelImagerHelper
     from casaviewer import imview
     
-    #from stk_utils import plot_utils as plt_utils
-    import stk_utils.plot_utils as plt_utils
+    import stakeholder.stk_utils.plot_utils as plt_utils
 
     CASA6 = True
     _ia = image()
