@@ -137,7 +137,7 @@ data_path = ctsys_resolve('/export/home/fornax/jhoskins/Data/casatestdata/stakeh
 # save the dictionaries of the metrics to files (per test)
 # mostly useful for the maintenance (updating the expected metric parameters based
 # on the current metrics)
-savemetricdict=False
+savemetricdict=True
 
 ## Base Test class with Utility functions
 class test_tclean_base(unittest.TestCase):
