@@ -1,6 +1,6 @@
 ##########################################################################
 ##########################################################################
-# test_stk_alma_pipeline_imaging-modular.py
+# nb1_test_standard_cube_briggsbwtapper.py
 #
 # Copyright (C) 2018
 # Associated Universities, Inc. Washington DC, USA.
@@ -583,8 +583,8 @@ class Test_standard(test_tclean_base):
     #Test 1a
     @stats_dict(test_dict)
     # @unittest.skip("")
-    def test_standard_cube(self):
-        ''' Standard (single field) cube imaging - central field of SMIDGE_NWCloud (field 3), spw 22 
+    def test_standard_cube_briggsbwtapper(self):
+        ''' Standard (single field) cube imaging with briggsbwtaper - central field of SMIDGE_NWCloud (field 3), spw 22
         '''
 
 
@@ -622,10 +622,10 @@ class Test_standard(test_tclean_base):
             datacolumn='data', cell=['1.1arcsec'], phasecenter='ICRS'
             ' 00:45:54.3836 -073.15.29.413', stokes='I', specmode='cube', \
             nchan=508, start='220.2526743594GHz', width='0.2441741MHz', \
-            outframe='LSRK', pblimit=0.2, perchanweightdensity=False, \
-            gridder='standard',  mosweight=False, \
+            outframe='LSRK', pblimit=0.2, perchanweightdensity=True,\
+            gridder='standard', mosweight=False, \
             deconvolver='hogbom', usepointing=False, restoration=False, \
-            pbcor=False, weighting='briggs', restoringbeam='common', \
+            pbcor=False, weighting='briggsbwtaper', restoringbeam='common', \
             robust=0.5, npixels=0, niter=0, threshold='0.0mJy', nsigma=0.0, \
             interactive=0, usemask='auto-multithresh', \
             sidelobethreshold=1.25, noisethreshold=5.0, \
@@ -647,15 +647,15 @@ class Test_standard(test_tclean_base):
             datacolumn='data', cell=['1.1arcsec'], phasecenter='ICRS '
             '00:45:54.3836 -073.15.29.413', stokes='I', specmode='cube', \
             nchan=508, start='220.2526743594GHz', width='0.2441741MHz',\
-            outframe='LSRK', perchanweightdensity=False, \
+            outframe='LSRK', perchanweightdensity=True, \
             usepointing=False, pblimit=0.2, nsigma=0.0, \
-            gridder='standard',  mosweight=False, \
-            deconvolver='hogbom', restoringbeam='common', restoration=True, pbcor=True, \
-            weighting='briggs', robust=0.5, npixels=0, niter=20000, \
+            gridder='standard', mosweight=False, \
+            deconvolver='hogbom', restoration=True, restoringbeam='common', pbcor=True, \
+            weighting='briggsbwtaper', robust=0.5, npixels=0, niter=20000, \
             threshold='0.354Jy', interactive=0, usemask='auto'
             '-multithresh', sidelobethreshold=1.25, noisethreshold=5.0, \
             lownoisethreshold=2.0, negativethreshold=0.0, \
-            minbeamfrac=0.1, growiterations=75, dogrowprune=True, \
+            minbeamfrac=0.08, growiterations=75, dogrowprune=True, \
             minpercentchange=1.0, fastnoise=False, restart=True, \
             calcres=False, calcpsf=False, savemodel='none', \
             parallel=self.parallel, verbose=True)
@@ -761,7 +761,7 @@ class Test_standard(test_tclean_base):
         add_to_dict(self, output = test_dict, dataset = \
             "E2E6.1.00034.S_tclean.ms")
 
-        self.modify_dict(test_dict, 'test_standard_cube', self.parallel)
+        self.modify_dict(test_dict, self.test_name, self.parallel)
 
         test_dict[self.test_name]['report'] = report
         test_dict[self.test_name]['images'] = []
