@@ -583,7 +583,7 @@ class Test_standard(test_tclean_base):
     #Test 1a
     @stats_dict(test_dict)
     # @unittest.skip("")
-    def test_standard_cube_briggsbwtapper(self):
+    def test_standard_cube_briggsbwtaper(self):
         ''' Standard (single field) cube imaging with briggsbwtaper - central field of SMIDGE_NWCloud (field 3), spw 22
         '''
 
@@ -600,7 +600,7 @@ class Test_standard(test_tclean_base):
             self.file_name = self.remove_prefix(self.test_name, 'test_')+'.iter'
             self.img = os.getcwd()+'/'+self.file_name+'1'
             self.prepData(self.data_path+'E2E6.1.00034.S_tclean.ms')
-            self.getExpdicts(self.test_name)
+            self.getExpdicts('test_standard_cube')
         else:
             self.test_name = self._testMethodName
 
@@ -608,7 +608,7 @@ class Test_standard(test_tclean_base):
             self.img = os.getcwd()+'/'+self.file_name+'1'
             self.set_file_path(data_path)
             self.prepData(data_path+'E2E6.1.00034.S_tclean.ms')
-            self.getExpdicts(self.test_name)
+            self.getExpdicts('test_standard_cube')
             self.standard_cube_clean()
             self.standard_cube_report()
 
