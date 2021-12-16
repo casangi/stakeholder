@@ -113,7 +113,7 @@ try:
     from casatasks.private.imagerhelpers.parallel_imager_helper import PyParallelImagerHelper
     from casaviewer import imview
     
-    import stakeholder.stk_utils.plot_utils as plt_utils
+    import stk_utils.plot_utils as plt_utils
 
     CASA6 = True
     _ia = image()
@@ -131,8 +131,7 @@ except ImportError:
         return os.path.join(dataPath,apath)
 
 # location of data
-# data_path = ctsys_resolve('stakeholder/alma/')
-data_path = ctsys_resolve('/export/home/fornax/jhoskins/Data/casatestdata/stakeholder/casatestdata/stakeholder/alma/')
+data_path = ctsys_resolve('data/')
 
 # save the dictionaries of the metrics to files (per test)
 # mostly useful for the maintenance (updating the expected metric parameters based

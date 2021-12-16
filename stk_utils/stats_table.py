@@ -20,7 +20,7 @@ class StatsTable():
             target metrics.
     """
 
-    def __init__(self, json_measured:str, json_expected:str):
+    def __init__(self, json_measured:str, json_expected:str, stakeholder_test:str):
         pn.extension(sizing_mode="stretch_width")
 
         try:
@@ -41,7 +41,7 @@ class StatsTable():
             
         self.__json_measured = json_measured
         self.__json_expected = json_expected
-        self.stakeholder_test = 'test_standard_cube'
+        self.stakeholder_test = stakeholder_test
         self.sub_test_stub = 'im_stats'
         self.df = None
 
