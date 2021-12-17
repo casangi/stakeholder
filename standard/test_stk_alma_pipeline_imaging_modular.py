@@ -195,8 +195,12 @@ class Test_standard(test_tclean_base):
 
         # iter1 (restart)
         tclean(vis=self.msfile, imagename=self.file_name+'1', field='1', \
-            spw=['0'], imsize=[80, 80], afrom casaviewer import imview2, nsigma=0.0, \
-            gridder='standard',  mosweight=False, \
+            spw=['0'], imsize=[80, 80], antenna=['0,1,2,3,4,5,6,7,8'], 
+            scan=['8,12,16'], intent='OBSERVE_TARGET#ON_SOURCE', datacolumn='data', 
+            cell=['1.1arcsec'], phasecenter='ICRS 00:45:54.3836 -073.15.29.413', 
+            stokes='I', specmode='cube', nchan=508, start='220.2526743594GHz', 
+            width='0.2441741MHz', outframe='LSRK', perchanweightdensity=False, 
+            usepointing=False, pblimit=0.2, nsigma=0.0, gridder='standard',  mosweight=False, \
             deconvolver='hogbom', restoringbeam='common', restoration=True, pbcor=True, \
             weighting='briggs', robust=0.5, npixels=0, niter=20000, \
             threshold='0.354Jy', interactive=0, usemask='auto'
@@ -211,7 +215,12 @@ class Test_standard(test_tclean_base):
     def standard_cube_report(self):
         # retrieve per-channel beam statistics
         bmin_dict, bmaj_dict, pa_dict = \
-            self.cube_beam_stats(image=sefrom casaviewer import imviewimage=self.img+'.image', fit_region = \
+            self.cube_beam_stats(image=self.img+'.psf')
+
+        report0 = th.checkall(imgexist = self.image_list(self.img, 'standard'))
+
+        # .image report(test_standard_cube)
+        im_stats_dict = self.image_stats(image=self.img+'.image', fit_region = \
             'ellipse[[11.47881897deg, -73.25881015deg], [9.0414arcsec, 8.4854arcsec], 90.00000000deg]')
 
         # test_standard_cube.exp_im_stats
@@ -345,6 +354,7 @@ class Test_standard(test_tclean_base):
             self.save_dict_to_file(self.test_name,savedict, self.test_name+'_cur_stats')
 
         self.assertTrue(th.check_final(pstr = report), msg = failed)
+        self.set_test_dict(test_dict)
 
 # End of test_standard_cube
 #-------------------------------------------------#

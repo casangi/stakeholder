@@ -59,10 +59,13 @@ class test_tclean_base(unittest.TestCase, tclean_base_template):
 
     def set_file_path(self, path):
         if os.path.exists(path) is False:
-            print('File path: ' + path + ' does not exist. Ceck input adn try again.')
+            print('File path: ' + path + ' does not exist. Check input and try again.')
         else:
             self.data_path = path
             print('Setting data_path: ' + self.data_path)
+
+    def set_test_dict(self, test_dict):
+        self.test_dict = test_dict
 
     def setUp(self):
         self._myia = _ia
@@ -91,7 +94,7 @@ class test_tclean_base(unittest.TestCase, tclean_base_template):
         self.refversion='6.3.0.22'
 
     def tearDown(self):
-        generate_weblog("tclean_ALMA_pipeline",test_dict)
+        generate_weblog("tclean_ALMA_pipeline", self.test_dict)
         print("Closing ia tool")
         self._myia.done()
 
