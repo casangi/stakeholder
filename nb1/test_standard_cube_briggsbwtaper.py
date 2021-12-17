@@ -1,6 +1,6 @@
 ##########################################################################
 ##########################################################################
-# nb1_test_standard_cube_briggsbwtapper.py
+# nb1_test_mosaic_cube_briggsbwtaper.py
 #
 # Copyright (C) 2018
 # Associated Universities, Inc. Washington DC, USA.
@@ -81,8 +81,6 @@
 ##########################################################################
 ##########################################################################
 
-# Imports #
-from abc import abstractmethod
 import os
 import glob
 import sys
