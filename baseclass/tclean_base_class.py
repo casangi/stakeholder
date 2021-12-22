@@ -90,7 +90,9 @@ class test_tclean_base(unittest.TestCase, tclean_base_template):
             self.msfile = msname
 
     def delData(self, msname=None):
-        del_files = [self.img_subdir]
+        del_files = []
+        if (os.path.exists(self.img_subdir)):
+            del_files.append(self.img_subdir)
         if msname != None:
             self.msfile=msname
         if (os.path.exists(self.msfile)):
@@ -155,10 +157,7 @@ class test_tclean_base(unittest.TestCase, tclean_base_template):
                 shutil.copytree(image_name, newname, symlinks=True)
 
     def cube_beam_stats(self, image):
-        """ function to return per-channel beam statistics
-            will be deprecated and combined into image_stats
-            once CASA beam issue is fixed
-        """
+        """ function to return per-channel beam statistics """
         self._myia.open(image)
 
         bmin_dict = {}; bmaj_dict = {}; pa_dict = {}
