@@ -16,35 +16,15 @@ th = TestHelpers()
 from casatestutils import generate_weblog
 from casatestutils.stakeholder import almastktestutils
 
+from casatools import ctsys, image
+from casatasks import immoments
+from casatasks.private.parallel.parallel_task_helper import ParallelTaskHelper
+from casaviewer import imview
 
-CASA6 = False
-try:
-    from casatools import ctsys, image
-    from casatasks import immoments
-    from casatasks.private.parallel.parallel_task_helper import ParallelTaskHelper
-    from casaviewer import imview
+from baseclass.tclean_base import tclean_base_template
 
-    from baseclass.tclean_base import tclean_base_template
-
-    CASA6 = True
-    _ia = image()
-    ctsys_resolve = ctsys.resolve
-
-except ImportError:
-    # reset given task to its default values
-    from __main__ import default  
-    
-    # Imports all casa tasks
-    from tasks import *  
-    
-    # Imports all casa tools
-    from taskinit import *  
-    from parallel.parallel_task_helper import ParallelTaskHelper
-
-    _ia = iatool()
-    def ctsys_resolve(apath):
-        dataPath = os.path.join(os.environ['CASAPATH'].split()[0], 'casatestdata/')
-        return os.path.join(dataPath,apath)
+_ia = image()
+ctsys_resolve = ctsys.resolve
 
 # Location of data
 data_path = ctsys_resolve('./data/')

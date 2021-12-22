@@ -95,31 +95,17 @@ from casatestutils import add_to_dict
 from casatestutils import stats_dict
 from casatestutils.stakeholder import almastktestutils
 
-CASA6 = False
-try:
-    from casatools import ctsys, image
-    from casatasks import tclean, immoments
-    from casatasks.private.parallel.parallel_task_helper import ParallelTaskHelper
-    from casatasks.private.imagerhelpers.parallel_imager_helper import PyParallelImagerHelper
-    
-    import stk_utils.plot_utils as plt_utils
-    
-    from  baseclass.tclean_base_class import test_tclean_base
+from casatools import ctsys, image
+from casatasks import tclean, immoments
+from casatasks.private.parallel.parallel_task_helper import ParallelTaskHelper
+from casatasks.private.imagerhelpers.parallel_imager_helper import PyParallelImagerHelper
 
-    CASA6 = True
-    _ia = image()
-    ctsys_resolve = ctsys.resolve
+import stk_utils.plot_utils as plt_utils
 
-except ImportError:
-    from __main__ import default  # reset given task to its default values
-    from tasks import *  # Imports all casa tasks
-    from taskinit import *  # Imports all casa tools
-    from parallel.parallel_task_helper import ParallelTaskHelper
+from  baseclass.tclean_base_class import test_tclean_base
 
-    _ia = iatool()
-    def ctsys_resolve(apath):
-        dataPath = os.path.join(os.environ['CASAPATH'].split()[0], 'casatestdata/')
-        return os.path.join(dataPath,apath)
+_ia = image()
+ctsys_resolve = ctsys.resolve
 
 # location of data
 data_path = ctsys_resolve('data/')
