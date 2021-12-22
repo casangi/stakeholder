@@ -1,11 +1,6 @@
 import os
 import glob
-import subprocess
 import unittest
-import numpy
-import shutil
-import scipy
-import matplotlib.pyplot as pyplot
 import json
 import pickle
 
@@ -17,9 +12,7 @@ from casatestutils import generate_weblog
 from casatestutils.stakeholder import almastktestutils
 
 from casatools import ctsys, image
-from casatasks import immoments
 from casatasks.private.parallel.parallel_task_helper import ParallelTaskHelper
-from casaviewer import imview
 
 from baseclass.tclean_base import tclean_base_template
 
