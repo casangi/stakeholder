@@ -102,7 +102,7 @@ from casatasks.private.imagerhelpers.parallel_imager_helper import PyParallelIma
 
 import stk_utils.plot_utils as plt_utils
 
-from  baseclass.tclean_base_class import test_tclean_base
+from baseclass.pipeline_base_class import test_pipeline_base
 
 _ia = image()
 ctsys_resolve = ctsys.resolve
@@ -118,7 +118,7 @@ savemetricdict=True
 ## Base Test class with Utility functions
 
 test_dict = {}
-class Test_standard(test_tclean_base):
+class Test_standard(test_pipeline_base):
 
     @stats_dict(test_dict)
     def test_mosaic_cube_briggsbwtaper(self):

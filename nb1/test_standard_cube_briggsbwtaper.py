@@ -103,7 +103,7 @@ from casatasks.private.imagerhelpers.parallel_imager_helper import PyParallelIma
 
 import stk_utils.plot_utils as plt_utils
 
-from baseclass.tclean_base_class import test_tclean_base
+from baseclass.pipeline_base_class import test_pipeline_base
 
 _ia = image()
 ctsys_resolve = ctsys.resolve
@@ -117,7 +117,7 @@ data_path = ctsys_resolve('data/')
 savemetricdict=True
 
 test_dict = {}
-class Test_standard(test_tclean_base):
+class Test_standard(test_pipeline_base):
 
     #Test 1a
     @stats_dict(test_dict)
