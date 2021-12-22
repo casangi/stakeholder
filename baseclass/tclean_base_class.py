@@ -67,7 +67,8 @@ class test_tclean_base(unittest.TestCase, tclean_base_template):
         self.refversion='6.3.0.22'
 
     def tearDown(self):
-        generate_weblog("tclean_ALMA_pipeline", self.test_dict)
+        if (hasattr(self, 'test_dict')):
+            generate_weblog("tclean_ALMA_pipeline", self.test_dict)
         print("Closing ia tool")
         self._myia.done()
 
