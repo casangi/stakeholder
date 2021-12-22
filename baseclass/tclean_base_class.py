@@ -105,13 +105,13 @@ class test_tclean_base(unittest.TestCase, tclean_base_template):
         self.exp_dicts = almastktestutils.read_testcase_expdicts(self.expdict_jsonfile, testname, self.refversion)
 
     # Separate functions here, for special-case tests that need their own MS.
-    def prepData(self, msname=[""]):
-        if msname != [""]:
+    def prepData(self, msname=None):
+        if msname != None:
             self.msfile = msname
 
-    def delData(self, msname=[""]):
+    def delData(self, msname=None):
         del_files = [self.img_subdir]
-        if msname != [""]:
+        if msname != None:
             self.msfile=msname
         if (os.path.exists(self.msfile)):
             del_files.append(self.msfile)
