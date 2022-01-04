@@ -3,6 +3,7 @@ import glob
 import unittest
 import json
 import pickle
+import shutil
 
 from casatestutils.imagerhelpers import TestHelpers
 
