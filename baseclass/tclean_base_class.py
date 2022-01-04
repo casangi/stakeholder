@@ -3,6 +3,7 @@ import glob
 import unittest
 import json
 import pickle
+import shutil
 
 from casatestutils.imagerhelpers import TestHelpers
 
@@ -93,6 +94,10 @@ class test_tclean_base(unittest.TestCase, tclean_base_template):
             del_files.append(self.msfile)
         img_files = glob.glob(self.img+'*')
         del_files += img_files
+        if hasattr(self, 'imgs'):
+            for img in self.imgs:
+                img_files = glob.glob(img+'*')
+                del_files += img_files
         for f in del_files:
             shutil.rmtree(f)
 
