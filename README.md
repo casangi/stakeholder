@@ -1,6 +1,6 @@
 # Installation
 ## JupyterLab
-JupyterLab notebook can be installed easily using either `conda` or `pip`. This has been confirmed on Debian Linux 20 and RedHat 8. Both python 3.6 and python 3.8 have been tested.
+JupyterLab notebook can be installed easily using either `conda` or `pip`. This has been confirmed on Mint Linux 20 and RedHat 8. Both python 3.6 and python 3.8 have been tested.
 
 ### Installation with conda
 To install `using conda` using `conda-forge`:
