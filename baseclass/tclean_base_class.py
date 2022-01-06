@@ -35,6 +35,7 @@ class test_tclean_base(unittest.TestCase, tclean_base_template):
         """ Setup function for unit testing. """
 
         self._myia = _ia
+        self._test_dict = None
         
         # sets epsilon as a percentage (1%)
         self.epsilon = 0.01 
@@ -63,7 +64,7 @@ class test_tclean_base(unittest.TestCase, tclean_base_template):
         """ Teardown function for unit testing. """
 
         if (hasattr(self, 'test_dict')):
-            generate_weblog("tclean_ALMA_pipeline", self.test_dict)
+            generate_weblog("tclean_ALMA_pipeline", self._test_dict)
         print("Closing ia tool")
         self._myia.done()
 
@@ -88,9 +89,9 @@ class test_tclean_base(unittest.TestCase, tclean_base_template):
             dict: Internal test_dict.
         """
 
-        return self.test_dict
+        return self._test_dict
 
-    @property.setter
+    @test_dict.setter
     def test_dict(self, test_dict):
         """ Standard setter function for test_dict.
 
@@ -100,7 +101,7 @@ class test_tclean_base(unittest.TestCase, tclean_base_template):
 
         print('Setting test dictionary value.')
 
-        self.test_dict = test_dict
+        self._test_dict = test_dict
 
     def getExpdicts(self, testname):
         """ Returns the fiducial metric values for a specific unit test, in json format.
