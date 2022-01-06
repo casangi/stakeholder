@@ -368,7 +368,7 @@ class Test_standard(test_pipeline_base):
             self.save_dict_to_file(self.test_name, savedict, self.test_name+'_cur_stats')
 
         self.assertTrue(th.check_final(pstr = report), msg = failed)
-        self.set_test_dict(test_dict)
+        self.test_dict = test_dict
 
 # End of test_mosaic_cube_briggsbwtaper
 #-------------------------------------------------#
