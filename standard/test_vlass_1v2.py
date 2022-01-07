@@ -8,10 +8,9 @@
 # The basic idea:
 #  Compare values from the most recent build of casa to other known values. Check for differences.
 #
-# Values to current versions against:
-#  1. known ground truth     --- from what? fluxscale task?
-#  2. CASA 6.1.3 values      --- pipeline approved version of casa
-#  3. on-axis values         --- do either John or Urvashi know what this means? is this another version of casa maybe?
+# Values to compare current versions against:
+#  1. on-axis      ---   "ground truth", I think from the (fluxscale?) task
+#  2. CASA 6.1.3   ---   pipeline approved version of casa
 #
 # What's good enough?
 #  flux density: 5% goal, 10% ok
@@ -22,11 +21,11 @@
 #  J1302
 #  J1927
 #
-# Processing methods:
-#  mosaic      - "stokes I?"
-#  awproject   - "stokes I?"
-#  mosaic cube - "cube?"
-#  mosaic QL   - "QL?"       --- what is VLASS QL? maybe it's a pipeline thing?
+# Impage processing methods:
+#  mosaic        ---   "stokes I"
+#  awproject     ---   "stokes I"
+#  mosaic cube   ---   "cube"
+#  mosaic QL     ---   "QL"
 #
 # Values to be compared:
 #  Stokes I:
@@ -100,15 +99,19 @@
 ##########################################################################
 
 import os
-import copy
 import unittest
 import numpy as np
-from collections import OrderedDict
 import shutil
+from datetime import datetime
 
 from casatasks import casalog, impbcor, imdev, imhead, imsubimage, imstat
+from casatools import table
+from casatestutils.imagerhelpers import TestHelpers
 
 from baseclass.vlass_base_class import test_vlass_base
+
+th = TestHelpers()
+tb = table()
 
 ##############################################
 ##############################################
@@ -116,76 +119,34 @@ class test_j1302(test_vlass_base):
 	
     def setUp(self):
         super().setUp()
+        self.vis = 'J1302-12fields.ms'
+        self.phasecenter = '13:03:13.874 -10.51.16.73'
+        self._clean_imgs_exist_dict()
 
-        ######################################################################
-        # This format is an attempt to maintain compatibility with the way
-        # that these values were presented to us in the VLASS-provided tests
-        # as written by John for CAS-12427.
-        
-        # values specific to J1302
-        vis                 =  'J1302-12fields.ms'
-        phasecenter         =  '13:03:13.874 -10.51.16.73'
-        reffreq             =  '3.0GHz'
-        intent              =  'OBSERVE_TARGET#UNSPECIFIED'
-        deconvolver         = 'mtmfs'
-        scales              = [0]
-        weighting           = 'briggs'
-        robust              = 1.0
-        mosweight           = False
-        interactive         = 0
-        self.common_script_pars = OrderedDict()
-        for k in ['vis', 'phasecenter', 'reffreq', 'intent', 'deconvolver', 'scales', 'weighting', 'robust', 'mosweight', 'interactive']:
-            self.common_script_pars[k] = locals()[k]
-
-        # non-QL J1302 script common defaults
-        #   ^-- these scripts: https://open-confluence.nrao.edu/pages/viewpage.action?spaceKey=CASA&title=Requirements+for+VLASS+Imaging+Pipeline+Stakeholders+Tests
-        cell           =  '0.6arcsec'
-        uvrange        =  '<12km'
-        wprojplanes    =  32
-        usepointing    =  True
-        datacolumn     = 'corrected'
-        conjbeams      = True
-        rotatepastep   = 5.0
-        smallscalebias = 0.4
-        nsigma         = 2.0
-        cycleniter     = 5000
-        cyclefactor    = 3
-        self.default_script_pars = OrderedDict()
-        for k in ['cell', 'uvrange', 'wprojplanes', 'usepointing', 'datacolumn', 'conjbeams', 'rotatepastep', 'smallscalebias', 'nsigma', 'cycleniter', 'cyclefactor']:
-            self.default_script_pars[k] = locals()[k]
-
-        # Merge into one default dict.
-        # Include the tclean defaults, as currently described in documentation, so that even if the
-        # defaults for the task change in the future, the parameters don't change for these tests.
-        self.default_tclean_pars = {}
-        self.default_tclean_pars_ql = {}
-        pars_dicts = [self.tclean_task_defaults, self.common_script_pars, self.default_script_pars]
-        for i in range(3):
-            d = pars_dicts[i]
-            for k in d:
-                self.default_tclean_pars[k] = d[k]
-                if i != 2: # skip non-QL common values
-                    self.default_tclean_pars_ql[k] = d[k]
-
-        ######################################################################
-        # For maintaining some semblance of compatibility between:
-        # - the VLASS format in CAS-12427, above, and
-        # - the jupyter notebooks format, from github.com/casangi/stakeholder/
-        self.msfile = vis
-
-    def _run_tclean(self, def_pars, **wargs):
-        def_pars['imsize'] = self.imsize
-        tclean_pars = self.get_merged_pars(in_pars=wargs, def_pars=def_pars)
-        self.print_dev_task_call('run_tclean', in_pars=wargs, def_pars=def_pars)
-        super().run_tclean(**tclean_pars)
-
-    def run_tclean(self, **wargs):
-        default_tclean_pars = copy.deepcopy(self.default_tclean_pars)
-        self._run_tclean(default_tclean_pars, **wargs)
-
-    def run_tclean_ql(self, **wargs):
-        default_tclean_pars_ql = copy.deepcopy(self.default_tclean_pars_ql)
-        self._run_tclean(default_tclean_pars_ql, **wargs)
+    def _run_tclean(self, vis='', selectdata=True, field='', spw='', timerange='', uvrange='', antenna='',
+                    scan='', observation='', intent='', datacolumn='corrected', imagename='', imsize=[100],
+                    cell=['1arcsec'], phasecenter='', stokes='I', projection='SIN', startmodel='',
+                    specmode='mfs', reffreq='', nchan=- 1, start='', width='', outframe='LSRK',
+                    veltype='radio', restfreq=[], interpolation='linear', perchanweightdensity=True,
+                    gridder='standard', facets=1, psfphasecenter='', wprojplanes=1, vptable='',
+                    mosweight=True, aterm=True, psterm=False, wbawp=True, conjbeams=False, cfcache='',
+                    usepointing=False, computepastep=360.0, rotatepastep=360.0, pointingoffsetsigdev=[],
+                    pblimit=0.2, normtype='flatnoise', deconvolver='hogbom', scales='', nterms=2,
+                    smallscalebias=0.0, restoration=True, restoringbeam='', pbcor=False, outlierfile='',
+                    weighting='natural', robust=0.5, noise='1.0Jy', npixels=0, uvtaper=[], niter=0,
+                    gain=0.1, threshold=0.0, nsigma=0.0, cycleniter=- 1, cyclefactor=1.0, minpsffraction=0.05,
+                    maxpsffraction=0.8, interactive=False, usemask='user', mask='', pbmask=0.0,
+                    sidelobethreshold=3.0, noisethreshold=5.0, lownoisethreshold=1.5, negativethreshold=0.0,
+                    smoothfactor=1.0, minbeamfrac=0.3, cutthreshold=0.01, growiterations=75, dogrowprune=True,
+                    minpercentchange=- 1.0, verbose=False, fastnoise=True, restart=True, savemodel='none',
+                    calcres=True, calcpsf=True, psfcutoff=0.35, parallel=False, compare_tclean_pars=None):
+        """ Runs tclean with the default parameters from v6.4.0
+        If the 'compare_tclean_pars' dict is provided, then compare these values to the other parameters of this function. """
+        run_tclean_pars = locals()
+        run_tclean_pars = {k:run_tclean_pars[k] for k in filter(lambda x: x not in ['self', 'compare_tclean_pars'] and '__' not in x, run_tclean_pars.keys())}
+        if (compare_tclean_pars != None):
+            self.print_task_diff_params('run_tclean', act_pars=run_tclean_pars, exp_pars=compare_tclean_pars)
+        super().run_tclean(**run_tclean_pars)
 
     def replace_psf(old, new):
         """ Replaces [old] PSF image with [new] image. Clears parallel working directories."""
@@ -193,15 +154,56 @@ class test_j1302(test_vlass_base):
             shutil.rmtree(self.imagename_base+old+'.psf.'+this_tt)
             shutil.copytree(self.imagename_base+new+'.psf.'+this_tt, self.imagename_base+old+'.psf.'+this_tt)
 
+    def _clean_imgs_exist_dict(self):
+        self.imgs_exist = { 'successes':[], 'reports':[] }
+
+    def check_img_exists(self, img):
+        """ Returns true if the image exists. A report is collected internally, to be returned as a group report in get_imgs_exist_results(...). """
+        exists = th.image_exists(img)
+        success, report = th.check_val(exists, True, valname=f"image_exists('{img1+toext}')", exact=True, testname=self._testMethodName)
+        if not exists:
+            # log immediately: missing images could cause the rest of the test to fail
+            casalog.post(report, "SEVERE")
+        self.imgs_exist['successes'].append(success)
+        self.imgs_exist['reports'].append(report)
+        return success
+
+    def get_imgs_exist_results(self):
+        """ Get a single collective result of check_img_exists(...) """
+        success = all(self.imgs_exist['successes'])
+        report = "".join(self.imgs_exist['reports'])
+        return success, report
+
+    def check_fracdiff(self, actual, expected, valname, desired_diff=0.05, max_diff=0.1):
+        """ Logs a warning if outside of desired bounds, returns False if outside required bounds """
+        # 5% desired, 10% required, as from https://drive.google.com/file/d/1zw6UeDEoXoxM05oFg3rir0hrCMEJMxkH/view and https://open-confluence.nrao.edu/display/VLASS/Updated+VLASS+survey+science+requirements+and+parameters
+        fracdiff=abs(actual-expected)/abs(expected)
+        val = max(fracdiff)
+        if (val > desired_diff):
+            casalog.post(f"Warning, {valname}: {fracdiff} vs desired {desired_diff}, (actual: {actual}, expected: {expected})", "WARN")
+        out = (val <= max_diff)
+
+        testname = self._testMethodName
+        correctval = f"< {max_diff}"
+        report = "[ {} ] {} is {} ( {} : should be {})\n".format(testname, valname, str(val), th.verdict(out), str(correctval) )
+        report = report.rstrip() + f" (raw actual/expected values: {actual}/{expected})\n"
+        return out, report
+
+    def check_column_exists(self, colname):
+        tb.open(self.vis)
+        cnt = tb.colnames().count(colname)
+        tb.done()
+        tb.close()
+        return th.check_val(cnt, 1, valname=f"count('{colname}')", exact=True, testname=self._testMethodName)
+
     # Test 1
     def test_j1302_mosaic(self):
         """ [j1302] test_j1302_mosaic """
         ######################################################################################
         # Should match values for "Stokes I" in the "Values to be compared"
         ######################################################################################
-        self.imsize = 4000
         img = self.imagename_base+'iter2'
-        # self.prepData(nocube=True)
+        # self.prepData()
         # combine first and 2nd order masks
         # immath(imagename=['secondmask.mask','QLcatmask.mask'],expr='IM0+IM1',outfile='sum_of_masks.mask')
         # im.mask(image='sum_of_masks.mask',mask='combined.mask',threshold=0.5)
@@ -232,10 +234,9 @@ class test_j1302(test_vlass_base):
         # TODO self.prepData(...)
         #previous steps in the pipeline would have created mask files from catalogs and images that were created as an 
         #intermediate pipeline step.
-        self.imsize = 5250
         # img0 = self.imagename_base+'iter0d'
         # img2 = self.imagename_base+'iter2'
-        # self.prepData(nocube=True)
+        # self.prepData()
 
         # # combine first and 2nd order masks
         # immath(imagename=['secondmask.mask', 'QLcatmask.mask'],
@@ -268,8 +269,7 @@ class test_j1302(test_vlass_base):
         # TODO self.prepData(...)
         #previous steps in the pipeline would have created mask files from catalogs and images that were created as an 
         #intermediate pipeline step.
-        self.imsize = 4000
-        # self.prepData(nocube=False)
+        # self.prepData()
 
         #previous steps in the pipeline would have created mask files from catalogs and images that were created as an 
         #intermediate pipeline step.
@@ -338,32 +338,70 @@ class test_j1302(test_vlass_base):
         ######################################################################################
         # Should match values for "QL" in the "Values to be compared"
         ######################################################################################
+        # not part of the jupyter scripts
+        tstobj = self # jupyter equivalent: "tstobj = test_j1302()"
+
+        ###########################################
+        # %% Set local vars [test_j1302_ql] start @
+        ###########################################
+
         #previous steps in the pipeline would have created mask files from catalogs and images that were created as an 
         #intermediate pipeline step.
-        self.data_path_dir  = 'J1302/Stakeholder-test-mosaic-data'
-        self.imagename_base = 'J1302_'
-        self.imsize = 7290
+        tstobj.data_path_dir  = 'J1302/Stakeholder-test-mosaic-data'
         img0 = 'VLASS1.2.ql.T08t20.J1302.10.2048.v1.I.iter0'
         img1 = 'VLASS1.2.ql.T08t20.J1302.10.2048.v1.I.iter1'
-        self.prepData(nocube=True)
+        tstobj.prepData()
+        rundir = "/users/bbean/dev/CAS-12427/src/casalith/build-casalith/work/linux/test_vlass_j1302_QL_unittest"
+        # os.system(f"mv {rundir}/run_results/VLASS* {rundir}/nosedir/test_vlass_1v2/")
 
-        ##############
-        # Run tclean #
-        ##############
+        ###########################################
+        # %% Set local vars [test_j1302_ql] start @
+        ###########################################
 
-        self.run_tclean_ql(imagename=img0, niter=0,     cell='1.0arcsec', datacolumn='data', perchanweightdensity=False, gridder='mosaic', restoration=False, restoringbeam='common', threshold='0.0mJy')
+        #########################################
+        # %% Set local vars [test_j1302_ql] end @
+        # .......................................
+
+        # not part of the jupyter scripts
+        starttime = datetime.now()
+
+        # .......................................
+        # %% Run tclean [test_j1302_ql] start   @
+        #########################################
+        pass
+
+        def run_tclean(vis=tstobj.vis, field='',spw='', antenna='', scan='', stokes='I', intent='OBSERVE_TARGET#UNSPECIFIED', datacolumn='data',
+                       imagename=None, niter=None, restoration=None, compare_tclean_pars=None,
+                       phasecenter=tstobj.phasecenter, reffreq='3.0GHz', deconvolver='mtmfs',
+                       cell='1.0arcsec', imsize=7290, gridder='mosaic', restoringbeam='common',
+                       specmode='mfs', nchan=-1, outframe='LSRK', perchanweightdensity=False, 
+                       wprojplanes=1, mosweight=False, conjbeams=False, usepointing=False,
+                       rotatepastep=360.0, pblimit=0.2, scales=[0], nterms=2, pbcor=False,
+                       weighting='briggs', robust=1.0, npixels=0, threshold=0.0, nsigma=0,
+                       cycleniter=-1, cyclefactor=1.0, interactive=0, fastnoise=True,
+                       calcres=True, calcpsf=True, savemodel='none', parallel=False):
+            params = locals()
+            params = {k:params[k] for k in filter(lambda x: x not in ['tstobj'], params.keys())}
+            tstobj._run_tclean(**params)
+
+        script_pars_vals_0 = None#tstobj.get_params_as_dict(vis='J1302-12fields.ms', selectdata=True, field='', spw='', timerange='', uvrange='', antenna='', scan='', observation='', intent='OBSERVE_TARGET#UNSPECIFIED', datacolumn='data', imagename='VLASS1.2.ql.T08t20.J1302.10.2048.v1.I.iter0', imsize=[7290, 7290], cell='1.0arcsec', phasecenter='13:03:13.874 -10.51.16.73', stokes='I', projection='SIN', startmodel='', specmode='mfs', reffreq='3.0GHz', nchan=-1, start='', width='', outframe='LSRK', veltype='radio', restfreq=[], interpolation='linear', perchanweightdensity=False, gridder='mosaic', facets=1, psfphasecenter='', chanchunks=1, wprojplanes=1, vptable='', mosweight=False, aterm=True, psterm=False, wbawp=True, conjbeams=False, cfcache='', usepointing=False, computepastep=360.0, rotatepastep=360.0, pointingoffsetsigdev=[], pblimit=0.2, normtype='flatnoise', deconvolver='mtmfs', scales=[0], nterms=2, smallscalebias=0.0, restoration=False, restoringbeam='common', pbcor=False, outlierfile='', weighting='briggs', robust=1.0, noise='1.0Jy', npixels=0, uvtaper=[], niter=0, gain=0.1, threshold='0.0mJy', nsigma=0.0, cycleniter=-1, cyclefactor=1.0, minpsffraction=0.05, maxpsffraction=0.8, interactive=0, usemask='user', mask='', pbmask=0.0, sidelobethreshold=3.0, noisethreshold=5.0, lownoisethreshold=1.5, negativethreshold=0.0, smoothfactor=1.0, minbeamfrac=0.3, cutthreshold=0.01, growiterations=75, dogrowprune=True, minpercentchange=-1.0, verbose=False, fastnoise=True, restart=True, savemodel='none', calcres=True, calcpsf=True, parallel=False)
+        script_pars_vals_1 = None#tstobj.get_params_as_dict(vis='J1302-12fields.ms', selectdata=True, field='', spw='', timerange='', uvrange='', antenna='', scan='', observation='', intent='OBSERVE_TARGET#UNSPECIFIED', datacolumn='data', imagename='VLASS1.2.ql.T08t20.J1302.10.2048.v1.I.iter1', imsize=[7290, 7290], cell='1.0arcsec', phasecenter='13:03:13.874 -10.51.16.73', stokes='I', projection='SIN', startmodel='', specmode='mfs', reffreq='3.0GHz', nchan=-1, start='', width='', outframe='LSRK', veltype='radio', restfreq=[], interpolation='linear', perchanweightdensity=False, gridder='mosaic', facets=1, psfphasecenter='', chanchunks=1, wprojplanes=1, vptable='', mosweight=False, aterm=True, psterm=False, wbawp=True, conjbeams=False, cfcache='', usepointing=False, computepastep=360.0, rotatepastep=360.0, pointingoffsetsigdev=[], pblimit=0.2, normtype='flatnoise', deconvolver='mtmfs', scales=[0], nterms=2, smallscalebias=0.0, restoration=True, restoringbeam='common', pbcor=False, outlierfile='', weighting='briggs', robust=1.0, noise='1.0Jy', npixels=0, uvtaper=[], niter=20000, gain=0.1, threshold=0.0, nsigma=4.5, cycleniter=500, cyclefactor=2.0, minpsffraction=0.05, maxpsffraction=0.8, interactive=0, usemask='user', mask='', pbmask=0.0, sidelobethreshold=3.0, noisethreshold=5.0, lownoisethreshold=1.5, negativethreshold=0.0, smoothfactor=1.0, minbeamfrac=0.3, cutthreshold=0.01, growiterations=75, dogrowprune=True, minpercentchange=-1.0, verbose=False, fastnoise=True, restart=True, savemodel='none', calcres=False, calcpsf=False, parallel=False)
+        run_tclean(imagename=img0, niter=0,     restoration=False, compare_tclean_pars=script_pars_vals_0)
         for ext in ['.weight.tt2', '.weight.tt0', '.psf.tt0', '.residual.tt0', '.weight.tt1', '.sumwt.tt2', '.psf.tt1', '.residual.tt1', '.psf.tt2', '.sumwt.tt1', '.model.tt0', '.pb.tt0', '.model.tt1', '.sumwt.tt0']:
             shutil.copytree(src=img0+ext, dst=img1+ext)
-        self.run_tclean_ql(imagename=img1, niter=20000, cell='1.0arcsec', datacolumn='data', perchanweightdensity=False, gridder='mosaic', restoringbeam='common', nsigma=4.5, cycleniter=500, cyclefactor=2.0, calcres=False, calcpsf=False)
+        run_tclean(imagename=img1, niter=20000, restoration=True, nsigma=4.5, cycleniter=500, cyclefactor=2.0, calcres=False, calcpsf=False, compare_tclean_pars=script_pars_vals_1)
 
-        ##################
-        # Prepare Images #
-        ##################
+        ###########################################
+        # %% Run tclean [test_j1302_ql] end       @
+        # %% Prepare Images [test_j1302_ql] start @
+        ###########################################
+        # hello
+        pass
 
         # hifv_pbcor(pipelinemode="automatic")
         for fromext,toext in [('.image.tt0','.image.pbcor.tt0'), ('.residual.tt0','.image.residual.pbcor.tt0')]:
             impbcor(imagename=img1+fromext, pbimage=img1+'.pb.tt0', outfile=img1+toext, mode='divide', cutoff=-1.0, stretch=False)
-            self.assertTrue(os.path.exists(img1+toext), msg=f"os.path.exists('{img1+toext}')")
+            tstobj.check_img_exists(img1+toext)
 
         # hif_makermsimages(pipelinemode="automatic")
         imdev(imagename=img1+'.image.pbcor.tt0',
@@ -371,36 +409,67 @@ class test_j1302(test_vlass_base):
               overwrite=True, stretch=False, grid=[10, 10], anchor='ref',
               xlength='60arcsec', ylength='60arcsec', interp='cubic', stattype='xmadm',
               statalg='chauvenet', zscore=-1, maxiter=-1)
-        self.assertTrue(os.path.exists(img1+'.image.pbcor.tt0.rms'), msg=f"os.path.exists('{img1+'.image.pbcor.tt0.rms'}')")
+        tstobj.check_img_exists(img1+'.image.pbcor.tt0.rms')
 
         # hif_makecutoutimages(pipelinemode="automatic")
         for ext in ['.image.tt0', '.residual.tt0', '.image.pbcor.tt0', '.image.pbcor.tt0.rms', '.psf.tt0', '.image.residual.pbcor.tt0', '.pb.tt0']:
             imhead(imagename=img1+ext)
             imsubimage(imagename=img1+ext, outfile=img1+ext+'.subim', box='1785.0,1785.0,5506.0,5506.0')
-            self.assertTrue(os.path.exists(img1+ext+'.subim'), msg=f"os.path.exists('{img1+ext+'.subim'}')")
+            tstobj.check_img_exists(img1+ext+'.subim')
 
-        ###########################
-        # Compare Expected Values #
-        ###########################
+        ####################################################
+        # %% Prepare Images [test_j1302_ql] end            @
+        # %% Compare Expected Values [test_j1302_ql] start @
+        ####################################################
 
-        tt0stats=imstat(imagename=img1+'.image.pbcor.tt0.subim',box='1860,1860,1860,1860')
-        onaxis_stats=np.array([0.9509])
-        casa613_stats=np.array([0.888])
-        currentstats=np.squeeze(np.array([tt0stats['max']]))
+        # (l) Ensure intermediate products exist, pbcor images, RMS image (made by imdev), and cutouts (.subim) from imsubimage
+        success0, report0 = tstobj.get_imgs_exist_results()
 
-        print('F_nu (current image): ',currentstats)
-        fracdiff=(currentstats-casa613_stats)/casa613_stats
-        print('Frac Diff F_nu vs. 6.1.3 image: ',fracdiff)
+        # (a) tt0 vs 6.1.3, on-axis
+        imstat_vals       = imstat(imagename=img1+'.image.pbcor.tt0.subim',box='1860,1860,1860,1860')
+        curr_stats        = np.squeeze(np.array([imstat_vals['max']]))
+        onaxis_stats      = np.array([0.9509])
+        success1, report1 = tstobj.check_fracdiff(curr_stats, onaxis_stats, valname="Frac Diff F_nu vs. on-axis")
+        casa613_stats     = np.array([0.888])
+        success2, report2 = tstobj.check_fracdiff(curr_stats, casa613_stats, valname="Frac Diff F_nu vs. 6.1.3 image")
 
-        fracdiff=(currentstats-onaxis_stats)/onaxis_stats
-        print('Frac Diff F_nu vs. on-axis: ',fracdiff)
+        # (b) tt1 vs 6.1.3, on-axis
+        # no tt1 images for this test, skip
 
-        header=imhead(img1+'.image.pbcor.tt0.subim')
-        beamstats_613=np.array([3.1565470695495605,                        2.58677792549133,                         11.282347679138184])
-        beamstats=np.array([    header['restoringbeam']['major']['value'], header['restoringbeam']['minor']['value'],header['restoringbeam']['positionangle']['value']])
+        # (c) alpha images
+        # TODO
+        # success3, report3 = ...
 
-        fracdiff=(beamstats-beamstats_613)/beamstats_613
-        print('Frac DiffMaj, Min, PA vs 6.1.3: ',fracdiff)
+        # (d) beamsize comparison vs 6.1.3
+        restbeam          = imhead(img1+'.image.pbcor.tt0.subim')['restoringbeam']
+        beamstats_curr    = np.array([restbeam['major']['value'], restbeam['minor']['value'], restbeam['positionangle']['value']])
+        beamstats_613     = np.array([3.1565470695495605, 2.58677792549133, 11.282347679138184])
+        success4, report4 = tstobj.check_fracdiff(beamstats_curr, beamstats_613, valname="Frac Diff Maj, Min, PA vs 6.1.3")
+
+        # (e) Confirm presence of model column in resultant MS
+        success5, report5 = tstobj.check_column_exists("MODEL_DATA")
+
+        report  = "".join([report0, report1, report2, report4, report5])
+        success = success1 and success2 and success4 and success5 and th.check_final(report)
+        casalog.post(report, "INFO")
+
+        ##################################################
+        # %% Compare Expected Valued [test_j1302_ql] end @
+        ##################################################
+        # not part of the jupyter scripts
+
+        # (f) Runtimes not significantly different relative to previous runs
+        # don't test this in jupyter notebooks - runtimes differ too much between machines
+        endtime           = datetime.now()
+        runtime           = (endtime-starttime).total_seconds()
+        runtime613        = 1
+        successt, reportt = th.check_val(runtime, runtime613, valname="6.1.3 runtime", exact=False, epsilon=0.1, testname=tstobj._testMethodName)
+
+        report += reportt
+        success = success and successt and th.check_final(report)
+        if not success: # easier to read this way than in an assert statement
+            casalog.post(report, "SEVERE")
+        tstobj.assertTrue(success, msg=report)
 
 
 ##############################################
