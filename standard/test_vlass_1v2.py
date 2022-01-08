@@ -160,7 +160,7 @@ class test_j1302(test_vlass_base):
     def check_img_exists(self, img):
         """ Returns true if the image exists. A report is collected internally, to be returned as a group report in get_imgs_exist_results(...). """
         exists = th.image_exists(img)
-        success, report = th.check_val(exists, True, valname=f"image_exists('{img1+toext}')", exact=True, testname=self._testMethodName)
+        success, report = th.check_val(exists, True, valname=f"image_exists('{img}')", exact=True, testname=self._testMethodName)
         if not exists:
             # log immediately: missing images could cause the rest of the test to fail
             casalog.post(report, "SEVERE")
@@ -354,10 +354,6 @@ class test_j1302(test_vlass_base):
         rundir = "/users/bbean/dev/CAS-12427/src/casalith/build-casalith/work/linux/test_vlass_j1302_QL_unittest"
         # os.system(f"mv {rundir}/run_results/VLASS* {rundir}/nosedir/test_vlass_1v2/")
 
-        ###########################################
-        # %% Set local vars [test_j1302_ql] start @
-        ###########################################
-
         #########################################
         # %% Set local vars [test_j1302_ql] end @
         # .......................................
@@ -368,7 +364,6 @@ class test_j1302(test_vlass_base):
         # .......................................
         # %% Run tclean [test_j1302_ql] start   @
         #########################################
-        pass
 
         def run_tclean(vis=tstobj.vis, field='',spw='', antenna='', scan='', stokes='I', intent='OBSERVE_TARGET#UNSPECIFIED', datacolumn='data',
                        imagename=None, niter=None, restoration=None, compare_tclean_pars=None,
@@ -395,8 +390,6 @@ class test_j1302(test_vlass_base):
         # %% Run tclean [test_j1302_ql] end       @
         # %% Prepare Images [test_j1302_ql] start @
         ###########################################
-        # hello
-        pass
 
         # hifv_pbcor(pipelinemode="automatic")
         for fromext,toext in [('.image.tt0','.image.pbcor.tt0'), ('.residual.tt0','.image.residual.pbcor.tt0')]:
@@ -454,7 +447,7 @@ class test_j1302(test_vlass_base):
         casalog.post(report, "INFO")
 
         ##################################################
-        # %% Compare Expected Valued [test_j1302_ql] end @
+        # %% Compare Expected Values [test_j1302_ql] end @
         ##################################################
         # not part of the jupyter scripts
 
