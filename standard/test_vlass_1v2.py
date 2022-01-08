@@ -397,7 +397,6 @@ class test_j1302(test_vlass_base):
             tstobj.check_img_exists(img1+toext)
 
         # hif_makermsimages(pipelinemode="automatic")
-        imdev(imagename=img1+'.image.pbcor.tt0',
               outfile=img1+'.image.pbcor.tt0.rms',
               overwrite=True, stretch=False, grid=[10, 10], anchor='ref',
               xlength='60arcsec', ylength='60arcsec', interp='cubic', stattype='xmadm',
