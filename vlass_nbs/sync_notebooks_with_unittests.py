@@ -234,11 +234,12 @@ def update_sections_in_file(file_name, sections_to_update, mode='tonb'):
 	else:
 		with open(file_name, 'r') as fin:
 			lines = fin.readlines()
-		sections_to_update = sections_to_update.sort(key=lambda s: s.line_start, reverse=True)
+		sections_to_update.sort(key=lambda s: s.line_start, reverse=True)
 		for section in sections_to_update:
-			before_lines = [] if (section.line_start == 0)       else lines[:section.line_start-1]
-			after_lines  = [] if (section.line_end < len(lines)) else lines[section.line_end+1:]
-			lines = before_lines + [get_new_section_code(section)] + after_lines
+			before_lines = [] if (section.line_start == 1)        else lines[:section.line_start-1]
+			after_lines  = [] if (section.line_end >= len(lines)) else lines[section.line_end:]
+			body_code = get_new_section_code(section)[:-1] # discard extra newline
+			lines = before_lines + [body_code] + after_lines
 		with open(file_name, 'w') as fout:
 			fout.writelines(lines)
 
