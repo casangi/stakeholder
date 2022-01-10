@@ -9,6 +9,8 @@ from pathlib import Path
 import re
 import json
 
+whitespace_pattern = re.compile(r"^[ \t]*[\n\r]*$")
+
 class Section():
 	""" Code section (either .ipynb or .py) """
 	start_pattern = re.compile(r"[ \t]*# %%[ \t]*(.*?)[ \t]*start.*@")
@@ -20,16 +22,25 @@ class Section():
 		self.source_file = source_file
 		self.line_start = line_start
 		self.line_end = line_end
-		self.sync_code, self.sync_line_start, self.sync_line_end, self.indent, self.start_code, self.end_code = Section._parse_raw_code(raw_code, source_file, line_start)
+
+		self.sync_line_start = -1
+		self.sync_line_end = -1
+		self.start_code = ""
+		self.sync_code = ""
+		self.end_code = ""
+		self.indent = ""
+		self._parse_raw_code()
+
+		self.new_sync_code = ""
 
 		if self.sync_line_start > line_end:
 			raise RuntimeError(f"Programmer error: failed to identify start of sync code in section {name} at {source_file}:{line_start}")
 		if self.sync_line_end > line_end:
 			raise RuntimeError(f"Programmer error: failed to identify end of sync code in section {name} at {source_file}:{line_start}")
 
-	def _parse_raw_code(raw_code, source_file, line_start):
+	def _parse_raw_code(self):
 		""" Ignore any comments followed by any number of whitespace lines at the beggining and end.
-		There MUST be a whitespace line after any comments at the beggining and beforey any comments at the end.
+		There MUST be a whitespace line after any comments at the beggining and before any comments at the end.
 		
 		Example format:
 		# section start @
@@ -38,70 +49,104 @@ class Section():
 
 		# section end @
 		"""
-		if type(raw_code) == list: # as from a notebook
-			raw_code = "".join(raw_code)
-		lines = split_lines(raw_code)
-
-		def unindent(txt, indent):
-			lines = split_lines(txt)
-			lines = [line.replace(indent, "", 1) for line in lines]
-			return "\n".join(lines)
+		source = self.raw_code
+		# merge lines into single string
+		if type(source) == list: # as from a notebookd
+			source = "".join(source)
+		source_lines = split_lines(source)
+		# don't include last empty line
+		if source_lines[-1] == "":
+			source_lines = source_lines[:-1]
 
 		i = -1 # current line index
-		indent = -1
-		found_start = False
-		found_code = False
-		found_end = False
-		sync_code = ""
-		sync_line_start = -1
-		sync_line_end = -1
-		start_lines = ""
-		end_lines = ""
-		for line in lines:
+		header_lines = []
+		body_lines = []
+		footer_lines = []
+
+		def add_header_line(line):
+			header_lines.append(line)
+		def add_body_lines(lines, mark_start=False):
+			body_lines.extend(lines)
+			if mark_start:
+				self.sync_line_start = self.line_start + i
+		def add_footer_line(line, mark_end=False):
+			footer_lines.append(line)
+			if mark_end:
+				self.sync_line_end = self.line_start + i - 1
+
+		state = 'HEADER'
+		is_last_whitespace = False
+		for line in source_lines:
 			i += 1
 			line_s = line.lstrip()
-			if not found_start:
-				if line_s != "" and line_s[0] == '#':
-					start_lines += line + "\n"
-					continue
-				elif line_s == "":
-					start_lines += line + "\n"
-					found_start = True
-				else:
-					raise RuntimeError(f"Expected a whitespace line in section at {source_file}:{line_start} before code started at line {line_start+i}")
-			else: # if found_start
-				if line_s == "":
-					# whitespace line
-					if not found_code:
-						start_lines += line + "\n"
-						continue # ignore any number of whitespace lines at the beggining
-					end_lines += line + "\n"
-					if not found_end:
-						sync_line_end = line_start + i - 1
-						found_end = True # could possibly be the ignored whitespace lines before the end
-				elif line_s[0] == '#' and found_end:
-					# comment line, possibly at the end of the section
-					end_lines += line + "\n"
-				else:
-					# code line
-					found_end = False # need to find whitespace before ending
-					if end_lines != "": # include any skipped whitespace and comment lines
-						sync_code += unindent(end_lines, indent)
-						end_lines = ""
-					if not found_code:
-						found_code = True
-						sync_line_start = line_start + i
-						indent = line.replace(line_s, "")
-					sync_code += unindent(line, indent) + "\n"
+			is_whitespace = whitespace_pattern.match(line_s) != None
+			is_comment = (line_s != "") and (line_s[0] == "#")
 
-		if not found_start:
-			raise RuntimeError(f"Didn't find any code in section at {source_file}:{line_start}")
-		if not found_end:
-			raise RuntimeError(f"Didn't find the end of the section at {source_file}:{line_start}. Make sure there's an empty line before the section end.")
-		if sync_code == "" or not found_code:
-			raise RuntimeError(f"Didn't find any code in the section at {source_file}:{line_start}")
+			if state == 'HEADER':
+				if is_whitespace: # whitespace line, next non-whitespace line after this starts the body
+					add_header_line(line)
+					state = 'HEADER_WHITESPACE'
+				elif is_comment: # include leading comment lines in header
+					add_header_line(line)
+				else:
+					raise RuntimeError(f"Expected a whitespace line in section at {self.source_file}:{self.line_start} before code started at line {self.line_start+i}")
 
-		return sync_code, sync_line_start, sync_line_end, indent, start_lines, end_lines
+			elif state == 'HEADER_WHITESPACE':
+				if is_whitespace: # extra whitespace line, include in header
+					add_header_line(line)
+				else: # anything else starts the body
+					self.indent = line.replace(line_s, "")
+					add_body_lines([line], mark_start=True)
+					state = 'BODY'
+
+			elif state == 'BODY':
+				if is_whitespace: # whitespace line, possibly the start of the footer
+					add_footer_line(line, mark_end=True)
+					state = 'FOOTER'
+				else:
+					add_body_lines([line])
+
+			elif state == 'FOOTER':
+				if is_whitespace: # include extra whitespace lines before the end
+					if is_last_whitespace: # continuation of whitespace lines before the end
+						add_footer_line(line)
+					else: # last line must have been a comment line
+						add_body_lines(footer_lines)
+						footer_lines.clear()
+						add_footer_line(line, mark_end=True)
+				elif is_comment:
+					add_footer_line(line)
+				else:
+					add_body_lines(footer_lines)
+					footer_lines.clear()
+					add_body_lines([line])
+					state = 'BODY'
+
+			is_last_whitespace = is_whitespace
+
+		if state in ['HEADER','HEADER_WHITESPACE']:
+			raise RuntimeError(f"Didn't find any code in section at {self.source_file}:{self.line_start}")
+		if state == 'BODY':
+			raise RuntimeError(f"Didn't find the end of the section at {self.source_file}:{self.line_start}. Make sure there's an empty line before the section end.")
+		if len(body_lines) == 0:
+			raise RuntimeError(f"Didn't find any code in the section at {self.source_file}:{self.line_start}")
+		if len(footer_lines) == 0:
+			raise RuntimeError(f"Expected a whitespace line in section at {self.source_file}:{self.line_start} before reaching end of section at line {self.line_start+i-1}")
+
+		# unindent sync code lines
+		body_lines = [line.replace(self.indent, "", 1) for line in body_lines]
+
+		self.start_code = "\n".join(header_lines) + "\n"
+		self.sync_code =  "\n".join(body_lines)   + "\n"
+		self.end_code =   "\n".join(footer_lines) + "\n"
+
+	def get_updated_code(self, indent_whitespace_lines=False):
+		indented_sync_lines = indent_lines(split_lines(self.new_sync_code), self.indent, indent_whitespace_lines)
+		indented_sync_code  = "\n".join(indented_sync_lines)
+		return self.start_code + indented_sync_code + self.end_code
+
+	def set_new_sync_code(self, new_sync_code):
+		self.new_sync_code = new_sync_code
 
 class NotebookSection(Section):
 	def set_nb_vals(self, cell_idx):
@@ -109,6 +154,15 @@ class NotebookSection(Section):
 
 def split_lines(txt):
 	return txt.replace("\r\n", "\n").replace("\n\r", "\n").split("\n")
+
+def indent_lines(lines, indent, indent_whitespace_lines):
+	for i in range(len(lines)):
+		line = lines[i]
+		if (whitespace_pattern.match(line) != None) and (not indent_whitespace_lines):
+			pass # don't indent whitespace-only lines
+		else:
+			lines[i] = indent + line
+	return lines
 
 def find_files():
 	currdir = Path(os.getcwd())
@@ -180,7 +234,7 @@ def get_ut_sections(ut_files):
 	ret = {}
 	for section in sections:
 		if section.name in ret:
-			raise RuntimeError(f"Found duplicate section \"{section.name}\"")
+			raise RuntimeError(f"Found duplicate section \"{section.name}\" in {section.source_file} (original in {ret[section.name].source_file})")
 		ret[section.name] = section
 	return ret
 
@@ -203,43 +257,42 @@ def get_nb_sections(nb_files):
 	ret = {}
 	for section in sections:
 		if section.name in ret:
-			raise RuntimeError(f"Found duplicate section \"{section.name}\"")
+			raise RuntimeError(f"Found duplicate section \"{section.name}\" in {section.source_file} (original in {ret[section.name].source_file})")
 		ret[section.name] = section
 	return ret
 
 def sync_section(ut_section, nb_section, mode='tonb'):
 	if mode == 'tonb':
-		nb_section.push_code = ut_section.sync_code
+		nb_section.set_new_sync_code(ut_section.sync_code)
 	elif mode == 'tout':
-		ut_section.push_code = nb_section.sync_code
+		ut_section.set_new_sync_code(nb_section.sync_code)
 	return True
 
 def update_sections_in_file(file_name, sections_to_update, mode='tonb'):
-	def get_new_section_code(section):
-		push_lines = split_lines(section.push_code)
-		body_code = section.indent + ("\n"+section.indent).join(push_lines)
-		return section.start_code + body_code + section.end_code
+	# update sections from last to first, so that updating one section doesn't affect line indexing of later sections
+	sections_to_update.sort(key=lambda s: s.line_start, reverse=True)
+
+	def update_section(section, source_lines, section_lines):
+		before_lines = [] if (section.line_start == 1)               else source_lines[:section.line_start-1]
+		after_lines  = [] if (section.line_end >= len(source_lines)) else source_lines[section.line_end:]
+		return before_lines + section_lines + after_lines
 
 	if mode == 'tonb':
 		with open(file_name, 'r') as fin:
 			parsed = json.load(fin)
 		for section in sections_to_update:
-			new_source_lines = split_lines(get_new_section_code(section))
-			new_source_lines = new_source_lines[:-1] # split_lines adds an extra line at the end
-			new_source_lines = [line+'\n' for line in new_source_lines] # .ipynb json needs extra '\n' characters
-			parsed['cells'][section.cell_idx]['source'] = new_source_lines
+			section_lines = split_lines(section.get_updated_code(indent_whitespace_lines=True))
+			section_lines = section_lines[:-1] # split_lines adds an extra line at the end
+			section_lines = [line+'\n' for line in section_lines] # .ipynb json needs extra '\n' characters
+			parsed['cells'][section.cell_idx]['source'] = update_section(section, parsed['cells'][section.cell_idx]['source'], section_lines)
 		outstr = json.dumps(parsed, indent=2)
 		with open(file_name, 'w') as fout:
 			fout.write(outstr)
 	else:
 		with open(file_name, 'r') as fin:
 			lines = fin.readlines()
-		sections_to_update.sort(key=lambda s: s.line_start, reverse=True)
 		for section in sections_to_update:
-			before_lines = [] if (section.line_start == 1)        else lines[:section.line_start-1]
-			after_lines  = [] if (section.line_end >= len(lines)) else lines[section.line_end:]
-			body_code = get_new_section_code(section)[:-1] # discard extra newline
-			lines = before_lines + [body_code] + after_lines
+			lines = update_section(section, lines, [section.get_updated_code()])
 		with open(file_name, 'w') as fout:
 			fout.writelines(lines)
 
@@ -293,9 +346,8 @@ if __name__ == "__main__":
 
 	# update the sections
 	for k in differing_section_names:
-		if (args.verbose >= 1):
-			arrow = '-->' if (args.mode == 'tonb') else '<--'
-			print(f"{ut_sections[k].source_file} {arrow} {nb_sections[k].source_file} [{nb_sections[k].name}]")
+		arrow = '-->' if (args.mode == 'tonb') else '<--'
+		print(f"{ut_sections[k].source_file} {arrow} {nb_sections[k].source_file} [{nb_sections[k].name}]")
 		sync_section(ut_sections[k], nb_sections[k], args.mode)
 
 	# save the sections back out

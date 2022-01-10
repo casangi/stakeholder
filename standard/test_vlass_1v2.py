@@ -395,7 +395,7 @@ class test_j1302(test_vlass_base):
         for fromext,toext in [('.image.tt0','.image.pbcor.tt0'), ('.residual.tt0','.image.residual.pbcor.tt0')]:
             impbcor(imagename=img1+fromext, pbimage=img1+'.pb.tt0', outfile=img1+toext, mode='divide', cutoff=-1.0, stretch=False)
             tstobj.check_img_exists(img1+toext)
-        
+
         # hif_makermsimages(pipelinemode="automatic")
         imdev(imagename=img1+'.image.pbcor.tt0',
               outfile=img1+'.image.pbcor.tt0.rms',
@@ -403,13 +403,13 @@ class test_j1302(test_vlass_base):
               xlength='60arcsec', ylength='60arcsec', interp='cubic', stattype='xmadm',
               statalg='chauvenet', zscore=-1, maxiter=-1)
         tstobj.check_img_exists(img1+'.image.pbcor.tt0.rms')
-        
+
         # hif_makecutoutimages(pipelinemode="automatic")
         for ext in ['.image.tt0', '.residual.tt0', '.image.pbcor.tt0', '.image.pbcor.tt0.rms', '.psf.tt0', '.image.residual.pbcor.tt0', '.pb.tt0']:
             imhead(imagename=img1+ext)
             imsubimage(imagename=img1+ext, outfile=img1+ext+'.subim', box='1785.0,1785.0,5506.0,5506.0')
             tstobj.check_img_exists(img1+ext+'.subim')
-        
+
         ####################################################
         # %% Prepare Images [test_j1302_ql] end            @
         # %% Compare Expected Values [test_j1302_ql] start @
