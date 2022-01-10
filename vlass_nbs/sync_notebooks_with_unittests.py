@@ -12,7 +12,24 @@ import json
 whitespace_pattern = re.compile(r"^[ \t]*[\n\r]*$")
 
 class Section():
-	""" Code section (either .ipynb or .py) """
+	""" Code section (either .ipynb or .py)
+	
+	Parses the raw code to be synchronized. Code/comments will be updated to match indent.
+
+	Format:
+	Starts with start_pattern and any extra comments, followed by one or more whitespace lines.
+	Ends with one or more whitespace lines, followed by any number of comment lines and an end_pattern line.
+	There MUST be a whitespace line after any comments at the beggining and before any comments at the end.
+
+	Example format:
+	# %% section start @
+	####################
+
+	<comments/code to be synchronized>
+
+	##################
+	# %% section end @
+	"""
 	start_pattern = re.compile(r"[ \t]*# %%[ \t]*(.*?)[ \t]*start.*@")
 	end_pattern   = re.compile(r"[ \t]*# %%[ \t]*(.*?)[ \t]*end.*@")
 
@@ -39,16 +56,7 @@ class Section():
 			raise RuntimeError(f"Programmer error: failed to identify end of sync code in section {name} at {source_file}:{line_start}")
 
 	def _parse_raw_code(self):
-		""" Ignore any comments followed by any number of whitespace lines at the beggining and end.
-		There MUST be a whitespace line after any comments at the beggining and before any comments at the end.
-		
-		Example format:
-		# section start @
-
-		pass
-
-		# section end @
-		"""
+		### Get source lines
 		source = self.raw_code
 		# merge lines into single string
 		if type(source) == list: # as from a notebookd
@@ -58,6 +66,7 @@ class Section():
 		if source_lines[-1] == "":
 			source_lines = source_lines[:-1]
 
+		### Local variables
 		i = -1 # current line index
 		header_lines = []
 		body_lines = []
@@ -74,6 +83,7 @@ class Section():
 			if mark_end:
 				self.sync_line_end = self.line_start + i - 1
 
+		### Parsing state machine
 		state = 'HEADER'
 		is_last_whitespace = False
 		for line in source_lines:
