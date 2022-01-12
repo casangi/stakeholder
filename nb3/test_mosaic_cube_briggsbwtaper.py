@@ -102,7 +102,7 @@ from casatasks.private.imagerhelpers.parallel_imager_helper import PyParallelIma
 
 import stk_utils.plot_utils as plt_utils
 
-from baseclass.pipeline_base_class import test_pipeline_base
+from baseclass.stakeholder_base_class import test_stakeholder_base
 
 _ia = image()
 ctsys_resolve = ctsys.resolve
@@ -118,7 +118,7 @@ savemetricdict=True
 ## Base Test class with Utility functions
 
 test_dict = {}
-class Test_standard(test_pipeline_base):
+class Test_standard(test_stakeholder_base):
 
     @stats_dict(test_dict)
     def test_mosaic_cube_briggsbwtaper(self):
@@ -137,7 +137,7 @@ class Test_standard(test_pipeline_base):
             self.file_name = self.remove_prefix(self.test_name, 'test_')+'.iter'
             self.img = os.getcwd()+'/'+self.file_name+'1'
             self.prepData(self.data_path+'E2E6.1.00034.S_tclean.ms')
-            self.getExpdicts('test_mosaic_cube_briggsbwtaper')
+            self.load_exp_dicts('test_mosaic_cube_briggsbwtaper')
         else:
             self.test_name = self._testMethodName
 
@@ -145,7 +145,7 @@ class Test_standard(test_pipeline_base):
             self.img = os.getcwd()+'/'+self.file_name+'1'
             self.set_file_path(data_path)
             self.prepData(data_path+'E2E6.1.00034.S_tclean.ms')
-            self.getExpdicts('test_mosaic_cube_briggsbwtaper')
+            self.load_exp_dicts('test_mosaic_cube_briggsbwtaper')
             self.standard_cube_clean()
             self.standard_cube_report()
 
@@ -219,7 +219,7 @@ class Test_standard(test_pipeline_base):
              'circle[[00:45:59.330540, -73.15.23.68133], 22.45arcsec]'])
 
         # test_standard_cube.exp_im_stats
-        exp_im_stats = self.exp_dicts['exp_im_stats']
+        exp_im_stats = self._exp_dicts['exp_im_stats']
 
         report1 = th.checkall( \
             # checks for image and pb mask movement
@@ -235,7 +235,7 @@ class Test_standard(test_pipeline_base):
         mask_stats_dict = self.image_stats(self.img+'.mask')
 
         # test_mosaic_cube_briggsbwtaper.exp_mask_stats
-        exp_mask_stats = self.exp_dicts['exp_mask_stats']
+        exp_mask_stats = self._exp_dicts['exp_mask_stats']
 
         report3 = th.check_dict_vals(exp_mask_stats, mask_stats_dict, '.mask', epsilon=self.epsilon)
 
@@ -244,7 +244,7 @@ class Test_standard(test_pipeline_base):
             'ellipse[[11.47666677deg, -73.25825652deg], [52.6715arcsec, 52.2589arcsec], 0.00000000deg]')
 
         # test_mosaic_cube_briggsbwtaper.exp_pb_stats
-        exp_pb_stats = self.exp_dicts['exp_pb_stats']
+        exp_pb_stats = self._exp_dicts['exp_pb_stats']
 
         report4 = th.check_dict_vals(exp_pb_stats, pb_stats_dict, '.pb', epsilon=self.epsilon)
 
@@ -253,7 +253,7 @@ class Test_standard(test_pipeline_base):
             'ellipse[[11.47632032deg, -73.25823681deg], [8.7257arcsec, 8.0720arcsec], 90.00000000deg]')
 
         # test_mosaic_cube_briggsbwtaper.exp_psf_stats
-        exp_psf_stats = self.exp_dicts['exp_psf_stats']
+        exp_psf_stats = self._exp_dicts['exp_psf_stats']
 
         report5 = th.check_dict_vals(exp_psf_stats, psf_stats_dict, '.psf', epsilon=self.epsilon)
 
@@ -262,7 +262,7 @@ class Test_standard(test_pipeline_base):
             'ellipse [[11.48661818deg, -73.26292371deg], [8.2211arcsec, 7.4698arcsec], 90.00000000deg]')
 
         # test_mosaic_cube_briggsbwtaper.exp_resid_stats
-        exp_resid_stats = self.exp_dicts['exp_resid_stats']
+        exp_resid_stats = self._exp_dicts['exp_resid_stats']
 
         report6 = th.check_dict_vals(exp_resid_stats, resid_stats_dict, \
             '.residual', epsilon=self.epsilon)
@@ -272,7 +272,7 @@ class Test_standard(test_pipeline_base):
             'ellipse[[11.48109199deg, -73.25974151deg], [18.9246arcsec, 17.1916arcsec], 0.00000000deg]', masks=mask_stats_dict['mask'])
 
         # test_mosaic_cube_briggsbwtaper.exp_model_stats
-        exp_model_stats = self.exp_dicts['exp_model_stats']
+        exp_model_stats = self._exp_dicts['exp_model_stats']
 
         report7 = th.check_dict_vals(exp_model_stats, model_stats_dict, \
             '.model', epsilon=self.epsilon)
@@ -281,7 +281,7 @@ class Test_standard(test_pipeline_base):
         sumwt_stats_dict = self.image_stats(self.img+'.sumwt')
 
         # test_mosaic_cube_briggsbwtaper.exp_sumwt_stats
-        exp_sumwt_stats = self.exp_dicts['exp_sumwt_stats']
+        exp_sumwt_stats = self._exp_dicts['exp_sumwt_stats']
 
         report8 = th.check_dict_vals(exp_sumwt_stats, sumwt_stats_dict, \
             '.sumwt', epsilon=self.epsilon)
@@ -291,7 +291,7 @@ class Test_standard(test_pipeline_base):
             pb_stats_dict['pb_mask_0.2'], pb_stats_dict['pb_mask_0.5']])
 
         #test_mosaic_cube_briggsbwtaper.exp_wt_stats
-        exp_wt_stats = self.exp_dicts['exp_wt_stats']
+        exp_wt_stats = self._exp_dicts['exp_wt_stats']
 
         report9 = th.check_dict_vals(exp_wt_stats, wt_stats_dict, '.weight', epsilon=self.epsilon)
 
@@ -301,13 +301,13 @@ class Test_standard(test_pipeline_base):
 
         if self.parallel:
             # test_mosaic_cube_briggsbwtaper.exp_bmin_dict
-            exp_bmin_dict = self.exp_dicts['exp_bmin_dict']
+            exp_bmin_dict = self._exp_dicts['exp_bmin_dict']
 
             # test_mosaic_cube_briggsbwtaper.exp_bmaj_dict
-            exp_bmaj_dict = self.exp_dicts['exp_bmaj_dict']
+            exp_bmaj_dict = self._exp_dicts['exp_bmaj_dict']
 
             # test_mosaic_cube_briggsbwtaper.exp_pa_dict
-            exp_pa_dict = self.exp_dicts['exp_pa_dict']
+            exp_pa_dict = self._exp_dicts['exp_pa_dict']
 
             report += self.check_dict_vals_beam(exp_bmin_dict, bmin_dict, '.image bmin', epsilon=self.epsilon)
             report += self.check_dict_vals_beam(exp_bmaj_dict, bmaj_dict, '.image bmaj', epsilon=self.epsilon)

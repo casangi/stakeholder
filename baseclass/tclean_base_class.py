@@ -82,7 +82,7 @@ class test_tclean_base(unittest.TestCase, tclean_base_template):
             print('Setting data_path: ' + self.data_path)
 
     @property
-    def test_dict(self):
+    def test_dict(self)->dict:
         """ Standard getter fucntion for test_dict value. 
 
         Returns:
@@ -92,7 +92,7 @@ class test_tclean_base(unittest.TestCase, tclean_base_template):
         return self._test_dict
 
     @test_dict.setter
-    def test_dict(self, test_dict):
+    def test_dict(self, test_dict:dict)->None:
         """ Standard setter function for test_dict.
 
         Args:
@@ -103,14 +103,32 @@ class test_tclean_base(unittest.TestCase, tclean_base_template):
 
         self._test_dict = test_dict
 
-    def getExpdicts(self, testname):
-        """ Returns the fiducial metric values for a specific unit test, in json format.
+    @property
+    def exp_dict(self)->dict:
+        """[summary]
+
+        Returns:
+            [dict]: Expected metric values JSON file
+        """
+        return self._exp_dicts
+
+    @exp_dict.setter
+    def exp_dict(self, exp_dict:dict)->None:
+        """[summary]
+
+        Args:
+            exp_dict (dict): Expected metric values JSON file.
+        """
+        self._exp_dicts = exp_dict
+
+    def load_exp_dicts(self, testname:str)->None:
+        """ Sets the fiducial metric values for a specific unit test, in json format.
 
         Args:
             testname (str): Nmae of unit test.
         """
         
-        self.exp_dicts = almastktestutils.read_testcase_expdicts(self.expdict_jsonfile, testname, self.refversion)
+        self._exp_dicts = almastktestutils.read_testcase_expdicts(self.expdict_jsonfile, testname, self.refversion)
 
     # Separate functions here, for special-case tests that need their own MS.
     def prepData(self, msname=None):
@@ -153,11 +171,11 @@ class test_tclean_base(unittest.TestCase, tclean_base_template):
             shutil.rmtree(self.maskname)
         shutil.copytree(refdatapath+self.maskname, self.maskname, symlinks=True)
 
-    def check_dict_vals_beam(self, exp_dict, act_dict, suffix, epsilon=0.01):
+    def check_dict_vals_beam(self, exp_dict:dict, act_dict:dict, suffix:str, epsilon=0.01):
         """ Compares expected dictionary with actual dictionary. Useful for comparing the restoring beam.
 
         Args:
-            exp_dict (dic): Expected values, as key:value pairs.
+            exp_dict (dict): Expected values, as key:value pairs.
                 Keys must match between exp_dict and act_dict.
                 Values are compared between exp_dict and act_dict. A summary
                 line is returned with the first mismatched value, or the last
@@ -187,7 +205,7 @@ class test_tclean_base(unittest.TestCase, tclean_base_template):
 
         return report
 
-    def copy_products(self, old_pname, new_pname, ignore=None):
+    def copy_products(self, old_pname:str, new_pname:str, ignore=None):
         """ Function to copy iter0 images to iter1 images (taken from pipeline).
 
         Args:
@@ -208,11 +226,11 @@ class test_tclean_base(unittest.TestCase, tclean_base_template):
             else:
                 shutil.copytree(image_name, newname, symlinks=True)
 
-    def cube_beam_stats(self, image):
+    def cube_beam_stats(self, image:'CASAImage')->dict:
         """ Function to return per-channel beam statistics .
 
         Args:
-            image (image): Image to analyze.
+            image (CASAImage): Image to analyze.
 
         Returns:
             dict: Beam statistics dictionaries.
@@ -230,7 +248,7 @@ class test_tclean_base(unittest.TestCase, tclean_base_template):
 
         return bmin_dict, bmaj_dict, pa_dict
 
-    def save_dict_to_file(self, topkey, indict, outfilename, appendversion=True, outformat='JSON'):
+    def save_dict_to_file(self, topkey:str, indict:str, outfilename:str, appendversion=True, outformat='JSON')->None:
         """ Function that will save input Python dictionaries to a JSON file (default)
             or pickle file. topkey will be added as a top key for output (nested) dictionary
             and indict is stored under the key.
@@ -272,7 +290,7 @@ class test_tclean_base(unittest.TestCase, tclean_base_template):
         else:
             print("no saving with format:", outformat)
 
-    def modify_dict(self, output=None, testname=None, parallel=None):
+    def modify_dict(self, output=None, testname=None, parallel=None)->None:
         """ Modified test_dict constructed by casatestutils add_to_dict to include only
             the task commands executed and also add self.parallel value to the dictionary.
             The cube imaging cases usually have if-else conditional based on parallel mode is on or not
@@ -298,7 +316,7 @@ class test_tclean_base(unittest.TestCase, tclean_base_template):
                     output[testname]['taskcall'].pop(1)
             output[testname]['self.parallel']=parallel
 
-    def remove_prefix(self, string, prefix):
+    def remove_prefix(self, string:str, prefix:str)->str:
         """ Remove a specified prefix string from string.
 
         Args:
