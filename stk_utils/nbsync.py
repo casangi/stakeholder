@@ -294,6 +294,7 @@ def update_sections_in_file(file_name, sections_to_update, mode='tonb'):
 			section_lines = split_lines(section.get_updated_code(indent_whitespace_lines=True))
 			section_lines = section_lines[:-1] # split_lines adds an extra line at the end
 			section_lines = [line+'\n' for line in section_lines] # .ipynb json needs extra '\n' characters
+			section_lines[-1] = section_lines[-1].rstrip() #        ...except for the last line
 			parsed['cells'][section.cell_idx]['source'] = update_section(section, parsed['cells'][section.cell_idx]['source'], section_lines)
 		outstr = json.dumps(parsed, indent=2)
 		with open(file_name, 'w') as fout:
