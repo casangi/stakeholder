@@ -174,7 +174,7 @@ def find_files():
 	basedir = Path(currdir).parent.absolute()
 
 	# find the only recognized unittest .py file
-	ut_name = str(Path(basedir, 'standard', 'test_vlass_1v2.py'))
+	ut_name = str(Path(basedir, 'stakeholder/nb1', 'test_standard_cube_briggsbwtaper.py'))
 	if not os.path.exists(ut_name):
 		raise RuntimeError(f"Can't find unittest file {ut_name}")
 	ut_files = [ut_name]
@@ -309,6 +309,7 @@ if __name__ == "__main__":
 	group.add_argument('--tonb', action='store_const', const='tonb', dest='mode', help='to NoteBook (from .py to .ipynb)')
 	group.add_argument('--tout', action='store_const', const='tout', dest='mode', help='to UnitTest (from .ipynb to .py)')
 	parser.add_argument('--dryrun', action='store_true', help='Dry run, don\'t modify any files')
+	parser.add_argument('--file_stem', action='store', help='File stem of notebook/script to sync.')
 	parser.add_argument('--verbose', '-v', action='count', default=0)
 
 	args = parser.parse_args()
