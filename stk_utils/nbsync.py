@@ -1,5 +1,6 @@
 #! /usr/bin/python3
 """ Synchronizes changes between .py UnitTest files and .ipynb Jupyter files (originally for VLASS 1.2 tests).
+
 This script DOES NOT create new .py or new .ipynb files, and any sections added/removed should be manually managed.
 """
 
@@ -14,14 +15,18 @@ class Section():
 	""" Code section (either .ipynb or .py)
 	
 	Parses the raw code to be synchronized. Code/comments will be updated to match indent.
+
 	Format:
 	Starts with start_pattern and any extra comments, followed by one or more whitespace lines.
 	Ends with one or more whitespace lines, followed by any number of comment lines and an end_pattern line.
 	There MUST be a whitespace line after any comments at the beggining and before any comments at the end.
+
 	Example format:
 	# %% section start @
 	####################
+
 	<comments/code to be synchronized>
+
 	##################
 	# %% section end @
 	"""
@@ -289,6 +294,7 @@ def update_sections_in_file(file_name, sections_to_update, mode='tonb'):
 			section_lines = split_lines(section.get_updated_code(indent_whitespace_lines=True))
 			section_lines = section_lines[:-1] # split_lines adds an extra line at the end
 			section_lines = [line+'\n' for line in section_lines] # .ipynb json needs extra '\n' characters
+			section_lines[-1] = section_lines[-1].rstrip() #        ...except for the last line
 			parsed['cells'][section.cell_idx]['source'] = update_section(section, parsed['cells'][section.cell_idx]['source'], section_lines)
 		outstr = json.dumps(parsed, indent=2)
 		with open(file_name, 'w') as fout:
