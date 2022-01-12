@@ -62,6 +62,8 @@ class test_vlass_base(test_tclean_base):
         same_par_vals = []
         diff_par_vals = []
         diff_par_strs = []
+        new_par_vals = []
+        new_par_strs = []
 
         for pname in act_pars:
             par_found = False
@@ -75,14 +77,21 @@ class test_vlass_base(test_tclean_base):
                 if aval == exp_pars[pname]:
                     same_par_vals.append(pname)
                     aval_differs = False
-            if aval_differs or not par_found:
+            if not par_found:
+                new_par_vals.append(pname)
+                new_par_strs.append(f"{pname}={aval_str}")
+            elif aval_differs:
                 diff_par_vals.append(pname)
                 diff_par_strs.append(f"{pname}={aval_str}/{xval_str}")
 
         diff_pars_str = ", ".join(diff_par_strs)
+        new_pars_str = ", ".join(new_par_strs)
 
-        casalog.post(f"These parameters are different: {diff_par_vals}", "SEVERE")
-        casalog.post(f"             (actual/expected): {diff_pars_str}", "SEVERE")
+        casalog.post(    f"These parameters are different/new: {diff_par_vals+new_par_vals}", "SEVERE")
+        if len(diff_pars_str) > 0:
+            casalog.post(f"                 (actual/expected): {diff_pars_str}", "SEVERE")
+        if len(new_par_vals) > 0:
+            casalog.post(f"                          new pars: {new_pars_str}", "SEVERE")
 
     # def print_tclean(self, **wargs):
     #     diff_par_strs = []

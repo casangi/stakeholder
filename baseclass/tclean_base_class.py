@@ -63,7 +63,7 @@ class test_tclean_base(unittest.TestCase, tclean_base_template):
     def tearDown(self):
         """ Teardown function for unit testing. """
 
-        if (hasattr(self, 'test_dict')):
+        if self.test_dict != None:
             generate_weblog("tclean_ALMA_pipeline", self._test_dict)
         print("Closing ia tool")
         self._myia.done()
