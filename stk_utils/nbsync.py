@@ -1,5 +1,6 @@
 #! /usr/bin/python3
 """ Synchronizes changes between .py UnitTest files and .ipynb Jupyter files (originally for VLASS 1.2 tests).
+
 This script DOES NOT create new .py or new .ipynb files, and any sections added/removed should be manually managed.
 """
 
@@ -14,14 +15,18 @@ class Section():
 	""" Code section (either .ipynb or .py)
 	
 	Parses the raw code to be synchronized. Code/comments will be updated to match indent.
+
 	Format:
 	Starts with start_pattern and any extra comments, followed by one or more whitespace lines.
 	Ends with one or more whitespace lines, followed by any number of comment lines and an end_pattern line.
 	There MUST be a whitespace line after any comments at the beggining and before any comments at the end.
+
 	Example format:
 	# %% section start @
 	####################
+
 	<comments/code to be synchronized>
+
 	##################
 	# %% section end @
 	"""
