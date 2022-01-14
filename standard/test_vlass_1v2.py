@@ -461,7 +461,7 @@ class test_j1302(test_vlass_base):
         # compare to alpha (ground truth), and 6.1.3 (fitted for spws 2, 8, 14 from mosaic gridder in CASA 6.1.3)
         alpha = popt[0]
         f_nu0 = 10**popt[1]
-        currentstats      = np.squeeze(np.array([f_nu0,alpha])) # [flux density, alpha]
+        curr_stats        = np.squeeze(np.array([f_nu0,alpha])) # [flux density, alpha]
         onaxis_stats      = np.array([0.3337,-0.0476])
         success1, report1 = tstobj.check_fracdiff(curr_stats, onaxis_stats, valname="Frac Diff F_nu, alpha (on-axis)")
         casa613_stats     = np.array([0.3127,0.04134])
@@ -670,9 +670,9 @@ class test_j1302(test_vlass_base):
         # (a) tt0 vs 6.1.3, on-axis
         imstat_vals       = imstat(imagename=img1+'.image.pbcor.tt0.subim',box='1860,1860,1860,1860')
         curr_stats        = np.squeeze(np.array([imstat_vals['max']]))
-        onaxis_stats      = np.array([0.9509])
+        onaxis_stats      = np.array([0.3337])
         success1, report1 = tstobj.check_fracdiff(curr_stats, onaxis_stats, valname="Frac Diff F_nu vs. on-axis")
-        casa613_stats     = np.array([0.888])
+        casa613_stats     = np.array([0.320879])
         success2, report2 = tstobj.check_fracdiff(curr_stats, casa613_stats, valname="Frac Diff F_nu vs. 6.1.3 image")
 
         # (b) tt1 vs 6.1.3, on-axis
@@ -685,7 +685,7 @@ class test_j1302(test_vlass_base):
         # (d) beamsize comparison vs 6.1.3
         restbeam          = imhead(img1+'.image.pbcor.tt0.subim')['restoringbeam']
         beamstats_curr    = np.array([restbeam['major']['value'], restbeam['minor']['value'], restbeam['positionangle']['value']])
-        beamstats_613     = np.array([3.1565470695495605, 2.58677792549133, 11.282347679138184])
+        beamstats_613     = np.array([3.16884375, 2.59194756, 11.36847878])
         success4, report4 = tstobj.check_fracdiff(beamstats_curr, beamstats_613, valname="Frac Diff Maj, Min, PA vs 6.1.3")
 
         # (e) Confirm presence of model column in resultant MS
