@@ -151,9 +151,14 @@ class Test_standard(test_stakeholder_base):
 
     def standard_cube_clean(self):
         print("\nSTARTING: iter0 routine")
+        msfile = self.msfile
+        file_name = self.file_name
+        parallel = self.parallel
+
+        # %% test_mosaic_cube_briggsbwtaper_tclean_1 start @
 
         # iter0 routine
-        tclean(vis=self.msfile, field='SMIDGE_NWCloud', spw=['0'], \
+        tclean(vis=msfile, field='SMIDGE_NWCloud', spw=['0'], \
             antenna=['0,1,2,3,4,5,6,7,8'], scan=['8,12,16'], \
             intent='OBSERVE_TARGET#ON_SOURCE', datacolumn='data', \
             imagename=file_name+'0', imsize=[108, 108], cell=['1.1arcsec'], \
@@ -168,8 +173,10 @@ class Test_standard(test_stakeholder_base):
             sidelobethreshold=1.25, noisethreshold=5.0, \
             lownoisethreshold=2.0, negativethreshold=0.0, minbeamfrac=0.1, \
             growiterations=75, dogrowprune=True, minpercentchange=1.0, \
-            fastnoise=False, savemodel='none', parallel=self.parallel,
+            fastnoise=False, savemodel='none', parallel=parallel,
             verbose=True)
+
+        # %% test_mosaic_cube_briggsbwtaper_tclean_1 end @
 
         # move files to iter1
         print('Copying iter0 files to iter1')
@@ -177,8 +184,10 @@ class Test_standard(test_stakeholder_base):
 
         print("STARTING: iter1 routine")
 
+        # %% test_mosaic_cube_briggsbwtaper_tclean_2 start @
+
         # iter1 (restart)
-        tclean(vis=self.msfile, field='SMIDGE_NWCloud', spw=['0'], \
+        tclean(vis=msfile, field='SMIDGE_NWCloud', spw=['0'], \
             antenna=['0,1,2,3,4,5,6,7,8'],scan=['8,12,16'], \
             intent='OBSERVE_TARGET#ON_SOURCE', datacolumn='data', \
             imagename=file_name+'1', imsize=[108, 108], \
@@ -197,7 +206,9 @@ class Test_standard(test_stakeholder_base):
             minbeamfrac=0.1, growiterations=75, dogrowprune=True, \
             minpercentchange=1.0, fastnoise=False, restart=True, \
             savemodel='none', calcres=False, calcpsf=False, \
-            parallel=self.parallel, verbose=True)
+            parallel=parallel, verbose=True)
+
+        # %% test_mosaic_cube_briggsbwtaper_tclean_2 end @
 
 
     def standard_cube_report(self):
@@ -324,6 +335,19 @@ class Test_standard(test_stakeholder_base):
 
         test_dict['test_mosaic_cube_briggsbwtaper']['report'] = report
         test_dict['test_mosaic_cube_briggsbwtaper']['images'] = []
+
+        if os.path.isdir(os.getcwd() + '/' + self.img + '.image.moment8'):
+            try:
+                print('Removing moment8 file.')
+                shutil.rmtree(os.getcwd() + '/' + self.img + '.image.moment8')
+            except FileNotFoundError:
+                print('Failure to remove file: ' + os.getcwd() + '/' + self.img + '.image.moment8')
+
+        if os.path.isdir(os.getcwd() + '/' + self.img + '.residual.moment8'):
+            try:
+                shutil.rmtree(os.getcwd() + '/' + self.img + '.residual.moment8')
+            except FileNotFoundError:
+                print('Failure to remove file: ' + os.getcwd() + '/' + self.img + '.residual.moment8')
 
         immoments(imagename=self.img+'.image', moments = 8, outfile = self.img +'.image.moment8')
         plt_utils.plot_image(imname=self.img+'.image', type='.moment8', chan=0, trim=True)

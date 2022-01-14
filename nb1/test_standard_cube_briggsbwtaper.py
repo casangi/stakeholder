@@ -156,58 +156,115 @@ class Test_standard(test_stakeholder_base):
         file_name = self.file_name
         parallel = self.parallel
 
-        # %% test_standard_cube_tclean_1 start @
+        # %% test_standard_cube_briggsbwtaper_tclean_1 start @
 
-        # iter0 routine
-        tclean(vis=msfile, imagename=file_name+'0', field='1', \
-            spw=['0'], imsize=[80, 80], antenna=['0,1,2,3,4,5,6,7,8'], \
-            scan=['8,12,16'], intent='OBSERVE_TARGET#ON_SOURCE', \
-            datacolumn='data', cell=['1.1arcsec'], phasecenter='ICRS'
-            ' 00:45:54.3836 -073.15.29.413', stokes='I', specmode='cube', \
-            nchan=508, start='220.2526743594GHz', width='0.2441741MHz', \
-            outframe='LSRK', pblimit=0.2, perchanweightdensity=True,\
-            gridder='standard', mosweight=False, \
-            deconvolver='hogbom', usepointing=False, restoration=False, \
-            pbcor=False, weighting='briggsbwtaper', restoringbeam='common', \
-            robust=0.5, npixels=0, niter=0, threshold='0.0mJy', nsigma=0.0, \
-            interactive=0, usemask='auto-multithresh', \
-            sidelobethreshold=1.25, noisethreshold=5.0, \
-            lownoisethreshold=2.0, negativethreshold=0.0, minbeamfrac=0.1, \
-            growiterations=75, dogrowprune=True, minpercentchange=1.0, \
-            fastnoise=False, savemodel='none', parallel=parallel,
-            verbose=True)
+        casatasks.tclean(vis=msfile, 
+                         imagename=file_name+'0', 
+                         field='1',
+                         spw=['0'], 
+                         imsize=[80, 80], 
+                         antenna=['0,1,2,3,4,5,6,7,8'], 
+                         scan=['8,12,16'], 
+                         intent='OBSERVE_TARGET#ON_SOURCE',
+                         datacolumn='data', 
+                         cell=['1.1arcsec'], 
+                         phasecenter='ICRS 00:45:54.3836 -073.15.29.413', 
+                         stokes='I', 
+                         specmode='cube',
+                         nchan=508, 
+                         start='220.2526743594GHz', 
+                         width='0.2441741MHz',
+                         outframe='LSRK', 
+                         pblimit=0.2, 
+                         perchanweightdensity=True,
+                         gridder='standard', 
+                         mosweight=False,
+                         deconvolver='hogbom', 
+                         usepointing=False, 
+                         restoration=False,
+                         pbcor=False, 
+                         weighting='briggsbwtaper', 
+                         restoringbeam='common',
+                         robust=0.5, npixels=0, 
+                         niter=0, 
+                         threshold='0.0mJy', 
+                         nsigma=0.0,
+                         interactive=0, 
+                         usemask='auto-multithresh',
+                         sidelobethreshold=1.25, 
+                         noisethreshold=5.0,
+                         lownoisethreshold=2.0, 
+                         negativethreshold=0.0, 
+                         minbeamfrac=0.1,
+                         growiterations=75, 
+                         dogrowprune=True, 
+                         minpercentchange=1.0,
+                         fastnoise=False, 
+                         savemodel='none', 
+                         parallel=parallel,
+                         verbose=True)
 
-        # %% test_standard_cube_tclean_1 end @
+        # %% test_standard_cube_briggsbwtaper_tclean_1 end @
 
         # move files to iter1
         print('Copying iter0 files to iter1')
-        self.copy_products(self.file_name+'0', self.file_name+'1')
+        self.copy_products(file_name+'0', file_name+'1')
 
         print("STARTING: iter1 routine")
 
-        # %% test_standard_cube_tclean_2 start @
+        # %% test_standard_cube_briggsbwtaper_tclean_2 start @
 
-        # iter1 (restart)
-        tclean(vis=msfile, imagename=file_name+'1', field='1', \
-            spw=['0'], imsize=[80, 80], antenna=['0,1,2,3,4,5,6,7,8'], \
-            scan=['8,12,16'], intent='OBSERVE_TARGET#ON_SOURCE', \
-            datacolumn='data', cell=['1.1arcsec'], phasecenter='ICRS '
-            '00:45:54.3836 -073.15.29.413', stokes='I', specmode='cube', \
-            nchan=508, start='220.2526743594GHz', width='0.2441741MHz',\
-            outframe='LSRK', perchanweightdensity=True, \
-            usepointing=False, pblimit=0.2, nsigma=0.0, \
-            gridder='standard', mosweight=False, \
-            deconvolver='hogbom', restoration=True, restoringbeam='common', pbcor=True, \
-            weighting='briggsbwtaper', robust=0.5, npixels=0, niter=20000, \
-            threshold='0.354Jy', interactive=0, usemask='auto'
-            '-multithresh', sidelobethreshold=1.25, noisethreshold=5.0, \
-            lownoisethreshold=2.0, negativethreshold=0.0, \
-            minbeamfrac=0.08, growiterations=75, dogrowprune=True, \
-            minpercentchange=1.0, fastnoise=False, restart=True, \
-            calcres=False, calcpsf=False, savemodel='none', \
-            parallel=parallel, verbose=True)
+        casatasks.tclean(vis=msfile, 
+                         imagename=file_name+'1', 
+                         field='1',
+                         spw=['0'], 
+                         imsize=[80, 80], 
+                         antenna=['0,1,2,3,4,5,6,7,8'],
+                         scan=['8,12,16'], 
+                         intent='OBSERVE_TARGET#ON_SOURCE',
+                         datacolumn='data', 
+                         cell=['1.1arcsec'], 
+                         phasecenter='ICRS 00:45:54.3836 -073.15.29.413', 
+                         stokes='I', 
+                         specmode='cube',
+                         nchan=508, 
+                         start='220.2526743594GHz', 
+                         width='0.2441741MHz',
+                         outframe='LSRK', 
+                         perchanweightdensity=True,
+                         usepointing=False, 
+                         pblimit=0.2, 
+                         nsigma=0.0,
+                         gridder='standard', 
+                         mosweight=False, 
+                         deconvolver='hogbom', 
+                         restoration=True, 
+                         restoringbeam='common', 
+                         pbcor=True, 
+                         weighting='briggsbwtaper', 
+                         robust=0.5, 
+                         npixels=0, 
+                         niter=20000,
+                         threshold='0.354Jy', 
+                         interactive=0, 
+                         usemask='auto-multithresh', 
+                         sidelobethreshold=1.25, 
+                         noisethreshold=5.0, 
+                         lownoisethreshold=2.0, 
+                         negativethreshold=0.0,
+                         minbeamfrac=0.08, 
+                         growiterations=75, 
+                         dogrowprune=True,
+                         minpercentchange=1.0, 
+                         fastnoise=False, 
+                         restart=True, 
+                         calcres=False, 
+                         calcpsf=False, 
+                         savemodel='none',
+                         parallel=parallel, 
+                         verbose=True)
 
-        # %% test_standard_cube_tclean_2 end @
+        # %% test_standard_cube_briggsbwtaper_tclean_2 end @
 
     def standard_cube_report(self):
         # retrieve per-channel beam statistics
@@ -322,7 +379,6 @@ class Test_standard(test_stakeholder_base):
         # This should be replaced by something else, maybe by adding something similar into the immoments function
         # or adding date-time stamps.
         
-        print(os.getcwd() + '/' + self.img + '.image.moment8')
         if os.path.isdir(os.getcwd() + '/' + self.img + '.image.moment8'):
             try:
                 print('Removing moment8 file.')
