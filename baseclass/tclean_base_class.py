@@ -68,6 +68,24 @@ class test_tclean_base(unittest.TestCase, tclean_base_template):
         print("Closing ia tool")
         self._myia.done()
 
+    def get_exec_env(self):
+        """ Attempt to determine whether we're running in a Jupyter notebook ('ipynb'/'ipynb_colab') or some other environment.
+
+        See also: https://stackoverflow.com/questions/15411967/how-can-i-check-if-code-is-executed-in-the-ipython-notebook
+        """
+        try:
+            shell = get_ipython().__class__.__name__
+            if shell == 'ZMQInteractiveShell':        # Jupyter notebook or qtconsole
+                if get_ipython().__class__.__module__ == "google.colab._shell":
+                    return 'ipynb_colab'
+                return 'ipynb'
+            elif shell == 'TerminalInteractiveShell': # Terminal running IPython
+                return 'shell'
+            else:                                     # Other type (?)
+                return 'unknown'
+        except NameError:                             # Probably standard Python interpreter
+            return 'python'
+
     def set_file_path(self, path):
         """ Utility function that is sued to set the internal data path directory.
 
