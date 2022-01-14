@@ -106,6 +106,7 @@ from datetime import datetime
 
 from casatasks import casalog, impbcor, imdev, imhead, imsubimage, imstat
 from casatools import table
+from casatasks.private.parallel.parallel_task_helper import ParallelTaskHelper
 from casatestutils.imagerhelpers import TestHelpers
 
 from baseclass.vlass_base_class import test_vlass_base
@@ -116,12 +117,17 @@ tb = table()
 ##############################################
 ##############################################
 class test_j1302(test_vlass_base):
-	
+
     def setUp(self):
         super().setUp()
         self.vis = 'J1302-12fields.ms'
         self.phasecenter = '13:03:13.874 -10.51.16.73'
         self._clean_imgs_exist_dict()
+
+        self.parallel = False
+        if 'ipynb' not in self.get_exec_env():
+            if ParallelTaskHelper.isMPIEnabled():
+                self.parallel = True
 
     def _run_tclean(self, vis='', selectdata=True, field='', spw='', timerange='', uvrange='', antenna='',
                     scan='', observation='', intent='', datacolumn='corrected', imagename='', imsize=[100],
@@ -139,9 +145,10 @@ class test_j1302(test_vlass_base):
                     sidelobethreshold=3.0, noisethreshold=5.0, lownoisethreshold=1.5, negativethreshold=0.0,
                     smoothfactor=1.0, minbeamfrac=0.3, cutthreshold=0.01, growiterations=75, dogrowprune=True,
                     minpercentchange=- 1.0, verbose=False, fastnoise=True, restart=True, savemodel='none',
-                    calcres=True, calcpsf=True, psfcutoff=0.35, parallel=False, compare_tclean_pars=None):
+                    calcres=True, calcpsf=True, psfcutoff=0.35, parallel=None, compare_tclean_pars=None):
         """ Runs tclean with the default parameters from v6.4.0
         If the 'compare_tclean_pars' dict is provided, then compare these values to the other parameters of this function. """
+        parallel = (self.parallel) if (parallel == None) else (parallel)
         run_tclean_pars = locals()
         run_tclean_pars = {k:run_tclean_pars[k] for k in filter(lambda x: x not in ['self', 'compare_tclean_pars'] and '__' not in x, run_tclean_pars.keys())}
         if (compare_tclean_pars != None):
@@ -247,7 +254,7 @@ class test_j1302(test_vlass_base):
         # Should match values for "Stokes I" in the "Values to be compared"
         ######################################################################################
         # TODO self.prepData(...)
-        #previous steps in the pipeline would have created mask files from catalogs and images that were created as an 
+        #previous steps in the pipeline would have created mask files from catalogs and images that were created as an
         #intermediate pipeline step.
         # img0 = self.imagename_base+'iter0d'
         # img2 = self.imagename_base+'iter2'
@@ -276,6 +283,7 @@ class test_j1302(test_vlass_base):
         # self.run_tclean(imagename=img2, datacolumn='corrected', gridder='awproject', cfcache='', pblimit=0.02, scales=[0, 5, 12], nterms=2, niter=20000, nsigma=4.5, cycleniter=500, usemask='pb', calcres=False, calcpsf=False, parallel=self.parallel, pointingoffsetsigdev=[300, 30], wbawp=True, pbmask=0.4)
 
     # Test 3
+    @unittest.skipIf(ParallelTaskHelper.isMPIEnabled(), "Skip test. Tclean crashes with mpicasa+mosaic gridder+stokes imaging.")
     def test_j1302_mosaic_cube(self):
         """ [j1302] test_j1302_mosaic_cube """
         ######################################################################################
@@ -288,7 +296,7 @@ class test_j1302(test_vlass_base):
         # %% Set local vars [test_j1302_mosaic_cube] start @
         ####################################################
 
-        #previous steps in the pipeline would have created mask files from catalogs and images that were created as an 
+        #previous steps in the pipeline would have created mask files from catalogs and images that were created as an
         #intermediate pipeline step.
         tstobj.data_path_dir  = 'J1302/Stakeholder-test-mosaic-cube-data'
         tstobj.prepData()
@@ -340,7 +348,8 @@ class test_j1302(test_vlass_base):
                        robust=1.0, uvtaper=[''], gain=0.1, npixels=0, threshold=0.0,
                        nsigma=2.0, cycleniter=500, cyclefactor=3, interactive=0,
                        fastnoise=True, calcres=True, calcpsf=True, restoration=True,
-                       savemodel='none', parallel=False):
+                       savemodel='none'):
+            parallel = False # per John's comment on CAS-12427: "tclean crashes with mpicasa+mosaic gridder+stokes imaging"
             params = locals()
             params = {k:params[k] for k in filter(lambda x: x not in ['tstobj'], params.keys())}
             tstobj._run_tclean(**params)
@@ -572,6 +581,7 @@ class test_j1302(test_vlass_base):
         tstobj.assertTrue(success, msg=report)
 
     # Test 4
+    @unittest.skipIf(ParallelTaskHelper.isMPIEnabled(), "Only run in serial, since John Tobin's only executed this test in serial (see 01/12/22 comment on CAS-12427).")
     def test_j1302_ql(self):
         """ [j1302] test_j1302_ql """
         ######################################################################################
@@ -584,7 +594,7 @@ class test_j1302(test_vlass_base):
         # %% Set local vars [test_j1302_ql] start @
         ###########################################
 
-        #previous steps in the pipeline would have created mask files from catalogs and images that were created as an 
+        #previous steps in the pipeline would have created mask files from catalogs and images that were created as an
         #intermediate pipeline step.
         tstobj.data_path_dir  = 'J1302/Stakeholder-test-mosaic-data'
         img0 = 'VLASS1.2.ql.T08t20.J1302.10.2048.v1.I.iter0'
@@ -608,12 +618,12 @@ class test_j1302(test_vlass_base):
                        imagename=None, niter=None, restoration=None, compare_tclean_pars=None,
                        phasecenter=tstobj.phasecenter, reffreq='3.0GHz', deconvolver='mtmfs',
                        cell='1.0arcsec', imsize=7290, gridder='mosaic', restoringbeam='common',
-                       specmode='mfs', nchan=-1, outframe='LSRK', perchanweightdensity=False, 
+                       specmode='mfs', nchan=-1, outframe='LSRK', perchanweightdensity=False,
                        wprojplanes=1, mosweight=False, conjbeams=False, usepointing=False,
                        rotatepastep=360.0, pblimit=0.2, scales=[0], nterms=2, pbcor=False,
                        weighting='briggs', robust=1.0, npixels=0, threshold=0.0, nsigma=0,
                        cycleniter=-1, cyclefactor=1.0, interactive=0, fastnoise=True,
-                       calcres=True, calcpsf=True, savemodel='none', parallel=False):
+                       calcres=True, calcpsf=True, savemodel='none'):
             params = locals()
             params = {k:params[k] for k in filter(lambda x: x not in ['tstobj'], params.keys())}
             tstobj._run_tclean(**params)
