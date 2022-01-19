@@ -4,6 +4,7 @@ import shutil
 from collections import OrderedDict
 
 from casatasks import casalog, immath, tclean
+from casatasks.private.parallel.parallel_task_helper import ParallelTaskHelper
 
 from baseclass.tclean_base_class import test_tclean_base
 
@@ -14,19 +15,8 @@ class test_vlass_base(test_tclean_base):
         super().setUp()
         self.img = 'delete_me' # here so that test_tclean_base.delData() doesn't error out
         self.imgs = []
-        self.data_path = "/users/bbean/dev/CAS-12427/data"
-
-        # # actual tclean defaults, copy-pasted from https://casadocs.readthedocs.io/en/stable/api/tt/casatasks.imaging.tclean.html#casatasks.imaging.tclean
-        # lst_tclean_task_defaults = [('selectdata', True), ('field', ''), ('spw', ''), ('timerange', ''), ('uvrange', ''), ('antenna', ''), ('scan', ''), ('observation', ''), ('intent', ''), ('datacolumn', 'corrected'), ('imagename', ''), ('imsize', [100]), ('cell', ['1arcsec']), ('phasecenter', ''), ('stokes', 'I'), ('projection', 'SIN'), ('startmodel', ''), ('specmode', 'mfs'), ('reffreq', ''), ('nchan', - 1), ('start', ''), ('width', ''), ('outframe', 'LSRK'), ('veltype', 'radio'), ('restfreq', ''), ('interpolation', 'linear'), ('perchanweightdensity', True), ('gridder', 'standard'), ('facets', 1), ('psfphasecenter', ''), ('wprojplanes', 1), ('vptable', ''), ('mosweight', True), ('aterm', True), ('psterm', False), ('wbawp', True), ('conjbeams', False), ('cfcache', ''), ('usepointing', False), ('computepastep', 360.0), ('rotatepastep', 360.0), ('pointingoffsetsigdev', ''), ('pblimit', 0.2), ('normtype', 'flatnoise'), ('deconvolver', 'hogbom'), ('scales', ''), ('nterms', 2), ('smallscalebias', 0.0), ('restoration', True), ('restoringbeam', ''), ('pbcor', False), ('outlierfile', ''), ('weighting', 'natural'), ('robust', 0.5), ('noise', '1.0Jy'), ('npixels', 0), ('uvtaper', ['']), ('niter', 0), ('gain', 0.1), ('threshold', 0.0), ('nsigma', 0.0), ('cycleniter', - 1), ('cyclefactor', 1.0), ('minpsffraction', 0.05), ('maxpsffraction', 0.8), ('interactive', False), ('usemask', 'user'), ('mask', ''), ('pbmask', 0.0), ('sidelobethreshold', 3.0), ('noisethreshold', 5.0), ('lownoisethreshold', 1.5), ('negativethreshold', 0.0), ('smoothfactor', 1.0), ('minbeamfrac', 0.3), ('cutthreshold', 0.01), ('growiterations', 75), ('dogrowprune', True), ('minpercentchange', - 1.0), ('verbose', False), ('fastnoise', True), ('restart', True), ('savemodel', 'none'), ('calcres', True), ('calcpsf', True), ('psfcutoff', 0.35), ('parallel', False)]
-        # # some of the defaults as listed online are not what they claim to be
-        # for replacement in [('pointingoffsetsigdev',[]), ('restfreq',[]), ('uvtaper',[])]:
-        #     for i in range(len(lst_tclean_task_defaults)):
-        #         if lst_tclean_task_defaults[i][0] == replacement[0]:
-        #             lst_tclean_task_defaults[i] = (lst_tclean_task_defaults[i][0], replacement[1])
-        # # put these values into a dict
-        # self.tclean_task_defaults = OrderedDict()
-        # for kv in lst_tclean_task_defaults:
-        #     self.tclean_task_defaults[kv[0]] = kv[1]
+        # self.data_path = "/users/bbean/dev/CAS-12427/data"
+        self.data_path = "/export/home/figs/bbean/dev/CAS-12427/data"
 
     def tearDown(self):
         super().tearDown()
@@ -37,14 +27,94 @@ class test_vlass_base(test_tclean_base):
             if hasattr(self, local_var):
                 setattr(self, local_var, None)
 
-    def prepData(self):
+    def prepData(self, *copyargs):
         msname = self.vis
         super().prepData(msname)
 
         data_path_dir = self.data_path_dir
         mssrc = os.path.join(self.data_path, data_path_dir, msname)
-
         shutil.copytree(mssrc, msname)
+
+        for copydir in copyargs:
+            copysrc = os.path.join(self.data_path, data_path_dir, copydir)
+            shutil.copytree(copysrc, copydir)
+
+    def _get_enable_parallel(self):
+        """ Returns True if (a) mpi is enabled, and (b) we're not running in a jupyter notebook """
+        if 'ipynb' not in self.get_exec_env(): # ipynb ~= notebook
+            if ParallelTaskHelper.isMPIEnabled():
+                return True
+        return False
+
+    def check_img_exists(self, img):
+        """ Returns true if the image exists. A report is collected internally, to be returned as a group report in get_imgs_exist_results(...).
+
+        See also: _clean_imgs_exist_dict(...)
+        """
+        exists = th.image_exists(img)
+        success, report = th.check_val(exists, True, valname=f"image_exists('{img}')", exact=True, testname=self._testMethodName)
+        if not exists:
+            # log immediately: missing images could cause the rest of the test to fail
+            casalog.post(report, "SEVERE")
+        self.imgs_exist['successes'].append(success)
+        self.imgs_exist['reports'].append(report)
+        return success
+
+    def get_imgs_exist_results(self):
+        """ Get a single collective result of check_img_exists(...) """
+        success = all(self.imgs_exist['successes'])
+        report = "".join(self.imgs_exist['reports'])
+        return success, report
+
+    def _clean_imgs_exist_dict(self):
+        """ Clean the arrays that hold onto the listo fimages to check for existance.
+
+        See also: check_img_exists(...)
+        """
+        self.imgs_exist = { 'successes':[], 'reports':[] }
+
+    def check_fracdiff(self, actual, expected, valname, desired_diff=0.05, max_diff=0.1):
+        """ Logs a warning if outside of desired bounds, returns False if outside required bounds
+        
+        5% desired, 10% required, as from https://drive.google.com/file/d/1zw6UeDEoXoxM05oFg3rir0hrCMEJMxkH/view and https://open-confluence.nrao.edu/display/VLASS/Updated+VLASS+survey+science+requirements+and+parameters
+        """
+        fracdiff=abs(actual-expected)/abs(expected)
+        val = max(fracdiff)
+        if (val > desired_diff):
+            casalog.post(f"Warning, {valname}: {fracdiff} vs desired {desired_diff}, (actual: {actual}, expected: {expected})", "WARN")
+        out = (val <= max_diff)
+
+        testname = self._testMethodName
+        correctval = f"< {max_diff}"
+        report = "[ {} ] {} is {} ( {} : should be {})\n".format(testname, valname, str(val), th.verdict(out), str(correctval) )
+        report = report.rstrip() + f" (raw actual/expected values: {actual}/{expected})\n"
+        return out, report
+
+    def check_column_exists(self, colname):
+        """ Verifies that the given column exists in the self.vis measurement set. """
+        tb.open(self.vis)
+        cnt = tb.colnames().count(colname)
+        tb.done()
+        tb.close()
+        return th.check_val(cnt, 1, valname=f"count('{colname}')", exact=True, testname=self._testMethodName)
+
+    def check_runtime(self, starttime, runtime613, success, report):
+        """ Verifies that the runtime is within 10% of the expected runtime613.
+
+        Probably only valid when running on the same hardware as was used to measure the previous runtime.
+        """
+        endtime           = datetime.now()
+        runtime           = (endtime-starttime).total_seconds()
+        successt, reportt = th.check_val(runtime, runtime613, valname="6.1.3 runtime", exact=False, epsilon=0.1, testname=self._testMethodName)
+
+        report += reportt
+        success = success and successt and th.check_final(report)
+        if not success:
+            casalog.post(report, "SEVERE") # easier to read this way than in an assert statement
+        else:
+            casalog.post(reportt)
+
+        return success, report
 
     # def get_merged_pars(self, in_pars, def_pars):
     #     ret = copy.deepcopy(def_pars)
@@ -104,6 +174,7 @@ class test_vlass_base(test_tclean_base):
     #     casalog.post(f"Offending tclean call:\n{diff_pars_call}", "SEVERE")
 
     def run_tclean(self, **wargs):
+        """ Tracks the "imagename" in self.imgs (for cleanup) and runs tclean. """
         if ('imagename' in wargs):
             img = wargs['imagename']
             if (img not in self.imgs):
@@ -114,3 +185,32 @@ class test_vlass_base(test_tclean_base):
         except:
             # self.print_tclean(**wargs)
             raise
+
+    def _run_tclean(self, vis='', selectdata=True, field='', spw='', timerange='', uvrange='', antenna='',
+                    scan='', observation='', intent='', datacolumn='corrected', imagename='', imsize=[100],
+                    cell=['1arcsec'], phasecenter='', stokes='I', projection='SIN', startmodel='',
+                    specmode='mfs', reffreq='', nchan=- 1, start='', width='', outframe='LSRK',
+                    veltype='radio', restfreq=[], interpolation='linear', perchanweightdensity=True,
+                    gridder='standard', facets=1, psfphasecenter='', wprojplanes=1, vptable='',
+                    mosweight=True, aterm=True, psterm=False, wbawp=True, conjbeams=False, cfcache='',
+                    usepointing=False, computepastep=360.0, rotatepastep=360.0, pointingoffsetsigdev=[],
+                    pblimit=0.2, normtype='flatnoise', deconvolver='hogbom', scales='', nterms=2,
+                    smallscalebias=0.0, restoration=True, restoringbeam='', pbcor=False, outlierfile='',
+                    weighting='natural', robust=0.5, noise='1.0Jy', npixels=0, uvtaper=[], niter=0,
+                    gain=0.1, threshold=0.0, nsigma=0.0, cycleniter=- 1, cyclefactor=1.0, minpsffraction=0.05,
+                    maxpsffraction=0.8, interactive=False, usemask='user', mask='', pbmask=0.0,
+                    sidelobethreshold=3.0, noisethreshold=5.0, lownoisethreshold=1.5, negativethreshold=0.0,
+                    smoothfactor=1.0, minbeamfrac=0.3, cutthreshold=0.01, growiterations=75, dogrowprune=True,
+                    minpercentchange=- 1.0, verbose=False, fastnoise=True, restart=True, savemodel='none',
+                    calcres=True, calcpsf=True, psfcutoff=0.35, parallel=None, compare_tclean_pars=None):
+        """ Runs tclean with the default parameters from v6.4.0
+        If the 'compare_tclean_pars' dict is provided, then compare these values to the other parameters of this function.
+
+        See also: self.run_tclean(...)
+        """
+        parallel = (self.parallel) if (parallel == None) else (parallel)
+        run_tclean_pars = locals()
+        run_tclean_pars = {k:run_tclean_pars[k] for k in filter(lambda x: x not in ['self', 'compare_tclean_pars', 'psfcutoff'] and '__' not in x, run_tclean_pars.keys())}
+        if (compare_tclean_pars != None):
+            self.print_task_diff_params('run_tclean', act_pars=run_tclean_pars, exp_pars=compare_tclean_pars)
+        self.run_tclean(**run_tclean_pars)
