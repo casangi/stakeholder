@@ -86,6 +86,7 @@ import unittest
 import shutil
 import matplotlib.pyplot as pyplot
 import copy
+import casatasks
 
 from casatestutils.imagerhelpers import TestHelpers
 
