@@ -104,7 +104,7 @@ from casatasks.private.imagerhelpers.parallel_imager_helper import PyParallelIma
 
 import stk_utils.plot_utils as plt_utils
 
-from baseclass.stakeholder_base_class import test_stakeholder_base
+from scripts.baseclass.stakeholder_base_class import test_stakeholder_base
 
 _ia = image()
 ctsys_resolve = ctsys.resolve

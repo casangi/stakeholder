@@ -22,7 +22,7 @@
 
 import abc
 ## Base Test Abstract class
-class tclean_base_template(abc.ABC):
+class stakeholder_baseclass_template(abc.ABC):
 
     @abc.abstractmethod
     def setUp(self):

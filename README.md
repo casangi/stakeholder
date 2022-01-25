@@ -52,12 +52,42 @@ drwxr-xr-x 28 username nraocv   4096 Jan  6 10:29 E2E6.1.00034.S_tclean.ms
 
 # Usage
 
-The stakeholder tests can be used either from the command-line as in the case of unit testing and in the form of a `jupyter-notebook`.  Each test case is divided into a separate directory and a list of test cases is provided below. In order to run the first test case, from the command-line, 
+The stakeholder tests can be used either from the command-line as in the case of unit testing and in the form of a `jupyter-notebook`.  Each test case is divided into a separate directory and a list of test cases is provided below. 
+
+### Installation
+
+You can install the required libraries using `pip` in either your standard envirnoment or by creating a new environment.
+
+```
+python3 -m pip install -r requirements.txt
+```
+
+You will also need to install the stakeholder tools library from the `pypi` test server (This is a stakehodler tool package I built while a better solution is identified)
+
+```
+python3 -m pip install --index-url https://test.pypi.org/simple/ --no-deps stktools
+```
+
+You can now run the test case scripts either using `python` locally  or using your choice of `casa` standalone. In order to run the first test case, from the command-line using `python`, 
 
 ```
 cd stakeholder/
-python3 -m nb1.test_standard_cube_briggsbwtaper
+python3 -m scripts.test_standard_cube_briggsbwtaper
 ```
+
+You can also run your choice of test using a given `casa` version using 
+
+```
+casa -c scripts/stakeholder_test.py --stakeholder-test <test-id>
+```
+
+The list of available tests is currently,
+
+| Test-ID                       | Stakeholder Test                   |
+| :---                          |    :----:                          |
+| standard_cube_briggsbwtaper   | test_standard_cube_briggsbwtaper   |
+| mosaic_cube_briggsbwtaper     | test_mosaic_cube_briggsbwtaper     |
+
 
 The code should run to completion and an html testing report should be created in the `stakeholder/` directory.
 

@@ -103,7 +103,7 @@ from casatasks.private.imagerhelpers.parallel_imager_helper import PyParallelIma
 
 import stk_utils.plot_utils as plt_utils
 
-from baseclass.stakeholder_base_class import test_stakeholder_base
+from scripts.baseclass.stakeholder_base_class import test_stakeholder_base
 
 _ia = image()
 ctsys_resolve = ctsys.resolve
@@ -159,7 +159,7 @@ class Test_standard(test_stakeholder_base):
         # %% test_mosaic_cube_briggsbwtaper_tclean_1 start @
 
         # iter0 routine
-        tclean(vis=msfile, field='SMIDGE_NWCloud', spw=['0'], \
+        casatasks.tclean(vis=msfile, field='SMIDGE_NWCloud', spw=['0'], \
             antenna=['0,1,2,3,4,5,6,7,8'], scan=['8,12,16'], \
             intent='OBSERVE_TARGET#ON_SOURCE', datacolumn='data', \
             imagename=file_name+'0', imsize=[108, 108], cell=['1.1arcsec'], \
@@ -188,7 +188,7 @@ class Test_standard(test_stakeholder_base):
         # %% test_mosaic_cube_briggsbwtaper_tclean_2 start @
 
         # iter1 (restart)
-        tclean(vis=msfile, field='SMIDGE_NWCloud', spw=['0'], \
+        casatasks.tclean(vis=msfile, field='SMIDGE_NWCloud', spw=['0'], \
             antenna=['0,1,2,3,4,5,6,7,8'],scan=['8,12,16'], \
             intent='OBSERVE_TARGET#ON_SOURCE', datacolumn='data', \
             imagename=file_name+'1', imsize=[108, 108], \
