@@ -13,7 +13,7 @@ if args.test_name[0] == 'standard_cube_briggsbwtaper':
     p = subprocess.Popen(cmd, stdout=sys.stdout, stderr=sys.stderr, shell=True)
 
 elif args.test_name[0] == 'mosaic_cube_briggsbwtaper':
-    cmd = 'python3 -m scripts.test_standard_cube_briggsbwtaper'
+    cmd = 'python3 -m scripts.test_mosaic_cube_briggsbwtaper'
     p = subprocess.Popen(cmd, stdout=sys.stdout, stderr=sys.stderr, shell=True)
 
 else:

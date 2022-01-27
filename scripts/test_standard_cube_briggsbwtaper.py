@@ -430,6 +430,10 @@ class Test_standard(test_stakeholder_base):
         self.assertTrue(th.check_final(pstr = report), msg = failed)
         self.test_dict = test_dict
 
+        # In the case of running in a notebook the tearDown() doesn't get called so we call it manually.
+        if self._testMethodName is "runTest":
+            self.tearDown()
+
 # End of test_standard_cube
 #-------------------------------------------------#
 

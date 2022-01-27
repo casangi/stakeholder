@@ -95,15 +95,13 @@ The code should run to completion and an html testing report should be created i
 test_tclean_alma_pipeline_weblog.html
 ```
 
-The `jupyter notebook` test cases are available in the `stakeholder/` directory. Notebooks can be run by simply running the the notebook and opening the desired test case (`.ipynb`). The notebook also support parallel processing usage via `casampi`. For installation of the required parallel processing libraries as well as general CASA installation instructions see [CASA installation](https://casadocs.readthedocs.io/en/stable/notebooks/introduction.html#id1).
-
-To toggle parallel processing in the notebook, set the boolean value of `parallel` in the appropriate notebook block to `True(False)`.
+The `jupyter notebook` test cases are available in the `stakeholder/` directory. Notebooks can be run by simply running the the notebook and opening the desired test case (`.ipynb`). 
 
 **As a warning, it is advised that the user restart the kernel and run the notebook after making changes to avoid issues due the hidden states in Jupyter notebooks.**
 
 ## Syncing notebook <--> script
 
-The `nbsync.py` script allows the user to synchronize changes between the notebook and the testing script. The script makes changes based on code packaged between header (footer). For example in the standard_cube code:
+The `scripts/nbsync.py` script allows the user to synchronize changes between the notebook and the testing script. The script makes changes based on code packaged between header (footer). For example in the standard_cube code:
 
 ```
 # %% test_standard_cube_briggsbwtaper_tclean_1 start @
@@ -114,7 +112,7 @@ Modifiable code placed here.
 
 ```
 
-Multiple header (footers) can be used in the code but they must be unique pairs. Currently the script only works on with the `standard_cube_briggsbwtaper` script adn notebook. The synchronization can be done as follows:
+Multiple header (footers) can be used in the code but they must be unique pairs. Currently the script only works on with the `standard_cube_briggsbwtaper` script and notebook. The synchronization can be done as follows:
 
 **notebook --> script**
 `python3 nbsync.py --tout`

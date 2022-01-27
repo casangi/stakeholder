@@ -395,6 +395,9 @@ class Test_standard(test_stakeholder_base):
         self.assertTrue(th.check_final(pstr = report), msg = failed)
         self.test_dict = test_dict
 
+        if self._testMethodName is "runTest":
+            self.tearDown()
+
 # End of test_mosaic_cube_briggsbwtaper
 #-------------------------------------------------#
 

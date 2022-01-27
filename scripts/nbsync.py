@@ -179,7 +179,7 @@ def find_files():
 	basedir = Path(currdir).parent.absolute()
 
 	# find the only recognized unittest .py file
-	ut_name = str(Path(basedir, 'stakeholder/nb1', 'test_standard_cube_briggsbwtaper.py'))
+	ut_name = str(Path(basedir, 'stakeholder/scripts', 'test_standard_cube_briggsbwtaper.py'))
 	if not os.path.exists(ut_name):
 		raise RuntimeError(f"Can't find unittest file {ut_name}")
 	ut_files = [ut_name]
