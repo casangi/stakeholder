@@ -1,0 +1,4 @@
+tests:
+  standard_cube_briggsbwtaper: 'test_standard_cube_briggsbwtaper'
+  mosaic_cube_briggsbwtaper: 'test_mosaic_cube_briggsbwtaper'
+  all: ['test_standard_cube_briggsbwtaper', 'test_mosaic_cube_briggsbwtaper']
