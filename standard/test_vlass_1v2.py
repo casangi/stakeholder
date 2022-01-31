@@ -172,22 +172,17 @@ class test_j1302(test_vlass_base):
         # %% Run tclean [test_j1302_mosaic_noncube] start  @
         ####################################################
 
-        def run_tclean(vis=tstobj.vis, field='',spw='', antenna='', scan='', stokes='I', intent='OBSERVE_TARGET#UNSPECIFIED', uvrange='<12km',
+        def run_tclean(vis=tstobj.vis, intent='OBSERVE_TARGET#UNSPECIFIED', uvrange='<12km',
                        niter=None, compare_tclean_pars=None, datacolumn=None,
                        imagename=img0, phasecenter=tstobj.phasecenter, reffreq='3.0GHz',
-                       deconvolver='mtmfs', cell='0.6arcsec', imsize=4000,
-                       gridder='mosaic', uvtaper=[''], restoringbeam=[], specmode='mfs',
-                       nchan=-1, usemask='user', mask='', pbmask=0, outframe='LSRK',
-                       wprojplanes=1, mosweight=False, conjbeams=False,
-                       usepointing=False, rotatepastep=5.0, smallscalebias=0.4,
-                       pblimit=0.1, scales=[0], nterms=2, pbcor=False,
-                       weighting='briggs', perchanweightdensity=True, robust=1.0,
-                       npixels=0, threshold=0.0, nsigma=2.0, cycleniter=500,
-                       cyclefactor=3.0, interactive=0, fastnoise=True, calcres=False,
-                       calcpsf=False, savemodel='none', restoration=True):
+                       deconvolver='mtmfs', cell='0.6arcsec', imsize=4000, gridder='mosaic',
+                       uvtaper=[''], restoringbeam=[], mosweight=False, rotatepastep=5.0,
+                       smallscalebias=0.0, pblimit=0.1, scales=[0], weighting='briggs',
+                       robust=1.0, nsigma=2.0, cycleniter=500, cyclefactor=3.0,
+                       interactive=0, calcres=False, calcpsf=False):
             params = locals()
             params = {k:params[k] for k in filter(lambda x: x not in ['tstobj'], params.keys())}
-            tstobj._run_tclean(**params)
+            tstobj.run_tclean(**params)
 
         script_pars_vals_0 = None#tstobj.get_params_as_dict(vis='J1302-12fields.ms', selectdata=True, field='', spw='', timerange='', uvrange='<12km', antenna='', scan='', observation='', intent='OBSERVE_TARGET#UNSPECIFIED', datacolumn='corrected', imagename='J1302_iter2', imsize=4000, cell='0.6arcsec', phasecenter='13:03:13.874 -10.51.16.73', stokes='I', projection='SIN', startmodel='', specmode='mfs', reffreq='3.0GHz', nchan=-1, start='', width='', outframe='LSRK', veltype='radio', restfreq=[], interpolation='linear', perchanweightdensity=True, gridder='mosaic', facets=1, psfphasecenter='', chanchunks=1, wprojplanes=1, vptable='', mosweight=False, aterm=True, psterm=False, wbawp=True, conjbeams=False, cfcache='', usepointing=False, computepastep=360.0, rotatepastep=5.0, pointingoffsetsigdev=[], pblimit=0.1, normtype='flatnoise', deconvolver='mtmfs', scales=[0], nterms=2, smallscalebias=0.4, restoration=True, restoringbeam=[], pbcor=False, outlierfile='', weighting='briggs', robust=1.0, noise='1.0Jy', npixels=0, uvtaper=[''], niter=0, gain=0.1, threshold=0.0, nsigma=2.0, cycleniter=500, cyclefactor=3.0, minpsffraction=0.05, maxpsffraction=0.8, interactive=False, usemask='user', mask='', pbmask=0.0, sidelobethreshold=3.0, noisethreshold=5.0, lownoisethreshold=1.5, negativethreshold=0.0, smoothfactor=1.0, minbeamfrac=0.3, cutthreshold=0.01, growiterations=75, dogrowprune=True, minpercentchange=-1.0, verbose=False, fastnoise=True, restart=True, savemodel='none', calcres=True, calcpsf=True, parallel=False)
         script_pars_vals_1 = None#tstobj.get_params_as_dict(vis='J1302-12fields.ms', selectdata=True, field='', spw='', timerange='', uvrange='<12km', antenna='', scan='', observation='', intent='OBSERVE_TARGET#UNSPECIFIED', datacolumn='corrected', imagename='J1302_iter2', imsize=4000, cell='0.6arcsec', phasecenter='13:03:13.874 -10.51.16.73', stokes='I', projection='SIN', startmodel='', specmode='mfs', reffreq='3.0GHz', nchan=-1, start='', width='', outframe='LSRK', veltype='radio', restfreq=[], interpolation='linear', perchanweightdensity=True, gridder='mosaic', facets=1, psfphasecenter='', chanchunks=1, wprojplanes=1, vptable='', mosweight=False, aterm=True, psterm=False, wbawp=True, conjbeams=False, cfcache='', usepointing=False, computepastep=360.0, rotatepastep=5.0, pointingoffsetsigdev=[], pblimit=0.1, normtype='flatnoise', deconvolver='mtmfs', scales=[0, 5, 12], nterms=2, smallscalebias=0.4, restoration=True, restoringbeam=[], pbcor=False, outlierfile='', weighting='briggs', robust=1.0, noise='1.0Jy', npixels=0, uvtaper=[''], niter=20000, gain=0.1, threshold=0.0, nsigma=3.0, cycleniter=500, cyclefactor=3.0, minpsffraction=0.05, maxpsffraction=0.8, interactive=False, usemask='user', mask='QLcatmask.mask', pbmask=0.0, sidelobethreshold=3.0, noisethreshold=5.0, lownoisethreshold=1.5, negativethreshold=0.0, smoothfactor=1.0, minbeamfrac=0.3, cutthreshold=0.01, growiterations=75, dogrowprune=True, minpercentchange=-1.0, verbose=False, fastnoise=True, restart=True, savemodel='none', calcres=False, calcpsf=False, parallel=False)
@@ -296,21 +291,16 @@ class test_j1302(test_vlass_base):
         # %% Run tclean [test_j1302_awproject] start   @
         ################################################
 
-        def run_tclean(vis=tstobj.vis, field='',spw='', antenna='', scan='', stokes='I', intent='OBSERVE_TARGET#UNSPECIFIED', datacolumn='corrected',
+        def run_tclean(vis=tstobj.vis, intent='OBSERVE_TARGET#UNSPECIFIED', phasecenter=tstobj.phasecenter,
                        imagename=None, niter=None, compare_tclean_pars=None,
-                       phasecenter=tstobj.phasecenter, reffreq='3.0GHz', deconvolver='mtmfs',
-                       cell='0.6arcsec', imsize=5250, gridder='awproject', mask='', uvtaper=[''], uvrange='<12km', usemask='user',
-                       restoringbeam=[], specmode='mfs', nchan=-1, outframe='LSRK',
-                       perchanweightdensity=True, wprojplanes=32, mosweight=False,
-                       conjbeams=True, usepointing=True, rotatepastep=5.0, pblimit=0.02,
-                       scales=[0], nterms=2, pbcor=False, weighting='briggs', robust=1.0,
-                       npixels=0, threshold=0.0, nsigma=2.0, cycleniter=5000, cyclefactor=3,
-                       interactive=0, fastnoise=True, gain=0.1, wbawp=True, pbmask=0.0,
-                       smallscalebias=0.4, pointingoffsetsigdev=[300, 30], calcres=True, restoration=True,
-                       calcpsf=True, savemodel='none', restart=True):
+                       reffreq='3.0GHz', deconvolver='mtmfs', cell='0.6arcsec', imsize=5250,
+                       gridder='awproject', uvtaper=[''], uvrange='<12km', restoringbeam=[], wprojplanes=32,
+                       mosweight=False, conjbeams=True, usepointing=True, rotatepastep=5.0, pblimit=0.02,
+                       scales=[0], weighting='briggs', robust=1.0, nsigma=2.0, cycleniter=5000,
+                       cyclefactor=3, interactive=0, smallscalebias=0.4, pointingoffsetsigdev=[300, 30]):
             params = locals()
             params = {k:params[k] for k in filter(lambda x: x not in ['tstobj'], params.keys())}
-            tstobj._run_tclean(**params)
+            tstobj.run_tclean(**params)
 
         def replace_psf(old, new):
             """ Replaces [old] PSF image with [new] image. Clears parallel working directories."""
@@ -458,21 +448,16 @@ class test_j1302(test_vlass_base):
         def iname(image_iter, spw, stokes): # imagename=imagename_base+image_iter+'_'+spw.replace('~','-')+'_'+stokes
             return 'J1302_'+image_iter+'_'+spw.replace('~','-')+'_'+stokes
 
-        def run_tclean(vis=tstobj.vis, field='',spw='', uvrange='<12km', imsize=4000, antenna='', scan='', stokes='I', intent='OBSERVE_TARGET#UNSPECIFIED', cell='0.6arcsec', datacolumn='data',
+        def run_tclean(vis=tstobj.vis, uvrange='<12km', imsize=4000, intent='OBSERVE_TARGET#UNSPECIFIED',
                        imagename=None, niter=None, compare_tclean_pars=None,
-                       phasecenter=tstobj.phasecenter, reffreq='3.0GHz', deconvolver='mtmfs',
-                       gridder='mosaic', restoringbeam=[], specmode='mfs', nchan=-1,
-                       outframe='LSRK', perchanweightdensity=True, mask='', usemask="user",
-                       pbmask=0.0, wprojplanes=1, mosweight=False, conjbeams=False,
-                       usepointing=False, rotatepastep=5.0, pblimit=0.1, scales=[0],
-                       nterms=1, pbcor=False, weighting='briggs', smallscalebias=0.4,
-                       robust=1.0, uvtaper=[''], gain=0.1, npixels=0, threshold=0.0,
-                       nsigma=2.0, cycleniter=500, cyclefactor=3, interactive=0,
-                       fastnoise=True, calcres=True, calcpsf=True, restoration=True,
-                       savemodel='none'):
+                       cell='0.6arcsec', datacolumn='data', phasecenter=tstobj.phasecenter,
+                       reffreq='3.0GHz', deconvolver='mtmfs', gridder='mosaic', restoringbeam=[],
+                       mosweight=False, rotatepastep=5.0, pblimit=0.1, scales=[0], nterms=1,
+                       weighting='briggs', smallscalebias=0.4, robust=1.0, uvtaper=[''], nsigma=2.0,
+                       cycleniter=500, cyclefactor=3, interactive=0):
             params = locals()
             params = {k:params[k] for k in filter(lambda x: x not in ['tstobj'], params.keys())}
-            tstobj._run_tclean(**params)
+            tstobj.run_tclean(**params)
 
         spws         = [ '2','8','14']
         stokesParams = ['IQUV']
@@ -679,16 +664,24 @@ class test_j1302(test_vlass_base):
           'freq': 3.564}
         }
 
+        success4 = []
+        report4 = []
         for spw in spws:
             # (h) IQUV flux densities of all three spws:              6.1.3
-            success4, report4 = tstobj.check_fracdiff(spwstats[spw]['IQUV'], spwstats_613[spw]['IQUV'],    valname=f"Stokes Comparison (spw {spw}), Frac Diff IQUV vs 6.1.3")
+            successN, reportN = tstobj.check_fracdiff(spwstats[spw]['IQUV'], spwstats_613[spw]['IQUV'],    valname=f"Stokes Comparison (spw {spw}), Frac Diff IQUV vs 6.1.3")
+            success4.append(successN)
+            report4.append(reportN)
             # (i) IQUV flux densities of all three spws:              on-axis measurements
-            success5, report5 = tstobj.check_fracdiff(spwstats[spw]['IQUV'], spwstats_onaxis[spw]['IQUV'], valname=f"Stokes Comparison (spw {spw}), Frac Diff IQUV vs on-axis")
+            successN, reportN = tstobj.check_fracdiff(spwstats[spw]['IQUV'], spwstats_onaxis[spw]['IQUV'], valname=f"Stokes Comparison (spw {spw}), Frac Diff IQUV vs on-axis")
+            success4.append(successN)
+            report4.append(reportN)
             # (j) Beam of all three spws:                             6.1.3
-            success6, report6 = tstobj.check_fracdiff(spwstats[spw]['beam'], spwstats_613[spw]['beam'],    valname=f"Stokes Comparison (spw {spw}), Frac Diff Beam vs 6.1.3")
+            successN, reportN = tstobj.check_fracdiff(spwstats[spw]['beam'], spwstats_613[spw]['beam'],    valname=f"Stokes Comparison (spw {spw}), Frac Diff Beam vs 6.1.3")
+            success4.append(successN)
+            report4.append(reportN)
 
-        report  = "".join([report0, report1, report2, report3, report4, report5, report6])
-        success = success0 and success1 and success2 and success3 and success4 and success5 and success6 and th.check_final(report)
+        report  = "".join([report0, report1, report2, report3, *report4])
+        success = success0 and success1 and success2 and success3 and all(success4) and th.check_final(report)
         casalog.post(f"{report}\nSuccess: {success}", "INFO")
 
         ###########################################################
@@ -736,19 +729,15 @@ class test_j1302(test_vlass_base):
         # %% Run tclean [test_j1302_ql] start   @
         #########################################
 
-        def run_tclean(vis=tstobj.vis, field='',spw='', antenna='', scan='', stokes='I', intent='OBSERVE_TARGET#UNSPECIFIED', datacolumn='data',
+        def run_tclean(vis=tstobj.vis, intent='OBSERVE_TARGET#UNSPECIFIED', datacolumn='data',
                        imagename=None, niter=None, restoration=None, compare_tclean_pars=None,
                        phasecenter=tstobj.phasecenter, reffreq='3.0GHz', deconvolver='mtmfs',
-                       cell='1.0arcsec', imsize=[7290,7290], gridder='mosaic', restoringbeam='common',
-                       specmode='mfs', nchan=-1, outframe='LSRK', perchanweightdensity=False,
-                       wprojplanes=1, mosweight=False, conjbeams=False, usepointing=False,
-                       rotatepastep=360.0, pblimit=0.2, scales=[0], nterms=2, pbcor=False,
-                       weighting='briggs', robust=1.0, npixels=0, threshold=0.0, nsigma=0,
-                       cycleniter=-1, cyclefactor=1.0, interactive=0, fastnoise=True,
-                       calcres=True, calcpsf=True, savemodel='none'):
+                       cell='1.0arcsec', imsize=[7290,7290], gridder='mosaic',
+                       restoringbeam='common', perchanweightdensity=False, mosweight=False,
+                       scales=[0], weighting='briggs', robust=1.0):
             params = locals()
             params = {k:params[k] for k in filter(lambda x: x not in ['tstobj'], params.keys())}
-            tstobj._run_tclean(**params)
+            tstobj.run_tclean(**params)
 
         script_pars_vals_0 = None#tstobj.get_params_as_dict(vis='J1302-12fields.ms', selectdata=True, field='', spw='', timerange='', uvrange='', antenna='', scan='', observation='', intent='OBSERVE_TARGET#UNSPECIFIED', datacolumn='data', imagename='VLASS1.2.ql.T08t20.J1302.10.2048.v1.I.iter0', imsize=[7290, 7290], cell='1.0arcsec', phasecenter='13:03:13.874 -10.51.16.73', stokes='I', projection='SIN', startmodel='', specmode='mfs', reffreq='3.0GHz', nchan=-1, start='', width='', outframe='LSRK', veltype='radio', restfreq=[], interpolation='linear', perchanweightdensity=False, gridder='mosaic', facets=1, psfphasecenter='', chanchunks=1, wprojplanes=1, vptable='', mosweight=False, aterm=True, psterm=False, wbawp=True, conjbeams=False, cfcache='', usepointing=False, computepastep=360.0, rotatepastep=360.0, pointingoffsetsigdev=[], pblimit=0.2, normtype='flatnoise', deconvolver='mtmfs', scales=[0], nterms=2, smallscalebias=0.0, restoration=False, restoringbeam='common', pbcor=False, outlierfile='', weighting='briggs', robust=1.0, noise='1.0Jy', npixels=0, uvtaper=[], niter=0, gain=0.1, threshold='0.0mJy', nsigma=0.0, cycleniter=-1, cyclefactor=1.0, minpsffraction=0.05, maxpsffraction=0.8, interactive=0, usemask='user', mask='', pbmask=0.0, sidelobethreshold=3.0, noisethreshold=5.0, lownoisethreshold=1.5, negativethreshold=0.0, smoothfactor=1.0, minbeamfrac=0.3, cutthreshold=0.01, growiterations=75, dogrowprune=True, minpercentchange=-1.0, verbose=False, fastnoise=True, restart=True, savemodel='none', calcres=True, calcpsf=True, parallel=False)
         script_pars_vals_1 = None#tstobj.get_params_as_dict(vis='J1302-12fields.ms', selectdata=True, field='', spw='', timerange='', uvrange='', antenna='', scan='', observation='', intent='OBSERVE_TARGET#UNSPECIFIED', datacolumn='data', imagename='VLASS1.2.ql.T08t20.J1302.10.2048.v1.I.iter1', imsize=[7290, 7290], cell='1.0arcsec', phasecenter='13:03:13.874 -10.51.16.73', stokes='I', projection='SIN', startmodel='', specmode='mfs', reffreq='3.0GHz', nchan=-1, start='', width='', outframe='LSRK', veltype='radio', restfreq=[], interpolation='linear', perchanweightdensity=False, gridder='mosaic', facets=1, psfphasecenter='', chanchunks=1, wprojplanes=1, vptable='', mosweight=False, aterm=True, psterm=False, wbawp=True, conjbeams=False, cfcache='', usepointing=False, computepastep=360.0, rotatepastep=360.0, pointingoffsetsigdev=[], pblimit=0.2, normtype='flatnoise', deconvolver='mtmfs', scales=[0], nterms=2, smallscalebias=0.0, restoration=True, restoringbeam='common', pbcor=False, outlierfile='', weighting='briggs', robust=1.0, noise='1.0Jy', npixels=0, uvtaper=[], niter=20000, gain=0.1, threshold=0.0, nsigma=4.5, cycleniter=500, cyclefactor=2.0, minpsffraction=0.05, maxpsffraction=0.8, interactive=0, usemask='user', mask='', pbmask=0.0, sidelobethreshold=3.0, noisethreshold=5.0, lownoisethreshold=1.5, negativethreshold=0.0, smoothfactor=1.0, minbeamfrac=0.3, cutthreshold=0.01, growiterations=75, dogrowprune=True, minpercentchange=-1.0, verbose=False, fastnoise=True, restart=True, savemodel='none', calcres=False, calcpsf=False, parallel=False)

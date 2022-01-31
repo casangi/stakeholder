@@ -173,7 +173,7 @@ class test_vlass_base(test_tclean_base):
 
     #     casalog.post(f"Offending tclean call:\n{diff_pars_call}", "SEVERE")
 
-    def run_tclean(self, **wargs):
+    def _run_tclean(self, **wargs):
         """ Tracks the "imagename" in self.imgs (for cleanup) and runs tclean. """
         if ('imagename' in wargs):
             img = wargs['imagename']
@@ -186,7 +186,7 @@ class test_vlass_base(test_tclean_base):
             # self.print_tclean(**wargs)
             raise
 
-    def _run_tclean(self, vis='', selectdata=True, field='', spw='', timerange='', uvrange='', antenna='',
+    def run_tclean(self, vis='', selectdata=True, field='', spw='', timerange='', uvrange='', antenna='',
                     scan='', observation='', intent='', datacolumn='corrected', imagename='', imsize=[100],
                     cell=['1arcsec'], phasecenter='', stokes='I', projection='SIN', startmodel='',
                     specmode='mfs', reffreq='', nchan=- 1, start='', width='', outframe='LSRK',
@@ -213,4 +213,4 @@ class test_vlass_base(test_tclean_base):
         run_tclean_pars = {k:run_tclean_pars[k] for k in filter(lambda x: x not in ['self', 'compare_tclean_pars', 'psfcutoff'] and '__' not in x, run_tclean_pars.keys())}
         if (compare_tclean_pars != None):
             self.print_task_diff_params('run_tclean', act_pars=run_tclean_pars, exp_pars=compare_tclean_pars)
-        self.run_tclean(**run_tclean_pars)
+        self._run_tclean(**run_tclean_pars)
