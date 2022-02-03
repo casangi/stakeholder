@@ -103,13 +103,22 @@ from casatasks.private.imagerhelpers.parallel_imager_helper import PyParallelIma
 
 import stk_utils.plot_utils as plt_utils
 
+# ======================================
+import sys
+
+__basename  = os.path.basename(__file__)
+__stakeholder_path = os.path.realpath(__file__).split("scripts/" + __basename)[0]
+sys.path.append(__stakeholder_path)
+
+# ======================================
+
 from scripts.baseclass.stakeholder_base_class import test_stakeholder_base
 
 _ia = image()
 ctsys_resolve = ctsys.resolve
 
 # location of data
-data_path = ctsys_resolve('data/')
+data_path = ctsys_resolve('stakeholder/alma/')
 
 # save the dictionaries of the metrics to files (per test)
 # mostly useful for the maintenance (updating the expected metric parameters based

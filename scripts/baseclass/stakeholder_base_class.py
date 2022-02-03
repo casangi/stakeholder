@@ -26,7 +26,7 @@ _ia = image()
 ctsys_resolve = ctsys.resolve
 
 # Location of data
-data_path = ctsys_resolve('./data/')
+data_path = ctsys_resolve('stakeholder/alma/')
 
 # Save the dictionaries of the metrics to files (per test)
 # mostly useful for the maintenance (updating the expected metric parameters based
