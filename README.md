@@ -75,33 +75,11 @@ cd stakeholder/
 python3 -m scripts.test_standard_cube_briggsbwtaper
 ```
 
-You can also run your choice of test(s) using a given `casa` version using 
+You can also run your choice of test(s) using a given `casa` version using (test_standard_cube_briggsbwtaper.py for instance)
 
 ```
-casa -c scripts/stakeholder_test.py --stakeholder-test <test-id>
+casa -c <directory to script>/test_standard_cube_briggsbwtaper.py
 ```
-
-or 
-
-```
-casa -c scripts/stakeholder_test.py --stakeholder-test <test-id-1 test-id-2 ... test-id-n>
-```
-
-You can run all of the availabe test by simply using
-
-
-```
-casa -c scripts/stakeholder_test.py --all
-```
-
-
-The list of available tests is currently,
-
-| Test-ID                       | Stakeholder Test                   |
-| :---                          |    :----:                          |
-| standard_cube_briggsbwtaper   | test_standard_cube_briggsbwtaper   |
-| mosaic_cube_briggsbwtaper     | test_mosaic_cube_briggsbwtaper     |
-
 
 The code should run to completion and an html testing report should be created in the `stakeholder/` directory.
 
