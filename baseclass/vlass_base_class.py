@@ -1,10 +1,14 @@
 import os
 import copy
 import shutil
-from collections import OrderedDict
+from datetime import datetime
+from collections import OrderedDict, Iterable
+import numpy as np
 
+from casatools import table, imager
 from casatasks import casalog, immath, tclean
 from casatasks.private.parallel.parallel_task_helper import ParallelTaskHelper
+from casatestutils.imagerhelpers import TestHelpers
 
 from baseclass.tclean_base_class import test_tclean_base
 
@@ -17,6 +21,9 @@ class test_vlass_base(test_tclean_base):
         self.imgs = []
         # self.data_path = "/users/bbean/dev/CAS-12427/data"
         self.data_path = "/export/home/figs/bbean/dev/CAS-12427/data"
+        self.th = TestHelpers()
+        self.tb = table()
+        self.im = imager()
 
     def tearDown(self):
         super().tearDown()
@@ -27,17 +34,34 @@ class test_vlass_base(test_tclean_base):
             if hasattr(self, local_var):
                 setattr(self, local_var, None)
 
+    def copy_file_or_dir(self, src, dst):
+        if (os.path.isdir(src)):
+            shutil.copytree(src, dst)
+        else:
+            shutil.copy2(src, dst)
+
     def prepData(self, *copyargs):
         msname = self.vis
         super().prepData(msname)
 
-        data_path_dir = self.data_path_dir
-        mssrc = os.path.join(self.data_path, data_path_dir, msname)
-        shutil.copytree(mssrc, msname)
+        if os.getenv("USE_CACHED_TCLEAN_VALS") != "true":
+            data_path_dir = self.data_path_dir
+            mssrc = os.path.join(self.data_path, data_path_dir, msname)
+            shutil.copytree(mssrc, msname)
 
-        for copydir in copyargs:
-            copysrc = os.path.join(self.data_path, data_path_dir, copydir)
-            shutil.copytree(copysrc, copydir)
+            for copydir in copyargs:
+                copysrc = os.path.join(self.data_path, data_path_dir, copydir)
+                shutil.copytree(copysrc, copydir)
+        else:
+            from os.path import dirname, join
+            import sys
+            fromdir = join( dirname(dirname(os.getcwd())), "partial_results" )
+            skipfiles = ["__pycache__"]
+            files = list(filter(lambda x: x not in skipfiles, os.listdir(fromdir)))
+            casalog.post(f"Restorting partial results [{len(files)}]", "SEVERE")
+            for i in range(len(files)):
+                casalog.post(f"{i}: {files[i]}", "SEVERE")
+                self.copy_file_or_dir(join(fromdir, files[i]), files[i])
 
     def _get_enable_parallel(self):
         """ Returns True if (a) mpi is enabled, and (b) we're not running in a jupyter notebook """
@@ -51,8 +75,8 @@ class test_vlass_base(test_tclean_base):
 
         See also: _clean_imgs_exist_dict(...)
         """
-        exists = th.image_exists(img)
-        success, report = th.check_val(exists, True, valname=f"image_exists('{img}')", exact=True, testname=self._testMethodName)
+        exists = self.th.image_exists(img)
+        success, report = self.th.check_val(exists, True, valname=f"image_exists('{img}')", exact=True, testname=self._testMethodName)
         if not exists:
             # log immediately: missing images could cause the rest of the test to fail
             casalog.post(report, "SEVERE")
@@ -73,30 +97,61 @@ class test_vlass_base(test_tclean_base):
         """
         self.imgs_exist = { 'successes':[], 'reports':[] }
 
+    def nparray_to_list(self, val):
+        if isinstance(val, np.ndarray) and val.ndim > 0:
+            val = list(val)
+            for i in range(len(val)):
+                val[i] = self.nparray_to_list(val[i])
+        return val
+
+    def check_diff(self, actual, expected, diff, valname, desired_diff, max_diff):
+        """ Logs a warning if outside of desired bounds, returns False if outside maximum bounds """
+
+        # only worry about comparing the maximum value
+        val = diff
+        if isinstance(diff, Iterable):
+            val = max(diff)
+        
+        # convert numpy arrays to lists so that the logs get printed on a single line
+        actual = self.nparray_to_list(actual)
+        expected = self.nparray_to_list(expected)
+        diff = self.nparray_to_list(diff)
+
+        # get some values
+        out = (val <= max_diff)
+        testname = self._testMethodName
+        correctval = f"< {max_diff}"
+
+        # generate the report
+        if (val > desired_diff):
+            casalog.post(f"Warning, {valname}: {diff} vs desired {desired_diff}, (actual: {actual}, expected: {expected})", "WARN")
+        report = "[ {} ] {} is {} ( {} : should be {})\n".format(testname, valname, str(diff), self.th.verdict(out), str(correctval) )
+        report = report.rstrip() + f" (raw actual/expected values: {actual}/{expected})\n"
+        return out, report
+
     def check_fracdiff(self, actual, expected, valname, desired_diff=0.05, max_diff=0.1):
         """ Logs a warning if outside of desired bounds, returns False if outside required bounds
         
         5% desired, 10% required, as from https://drive.google.com/file/d/1zw6UeDEoXoxM05oFg3rir0hrCMEJMxkH/view and https://open-confluence.nrao.edu/display/VLASS/Updated+VLASS+survey+science+requirements+and+parameters
         """
         fracdiff=abs(actual-expected)/abs(expected)
-        val = max(fracdiff)
-        if (val > desired_diff):
-            casalog.post(f"Warning, {valname}: {fracdiff} vs desired {desired_diff}, (actual: {actual}, expected: {expected})", "WARN")
-        out = (val <= max_diff)
+        return self.check_diff(actual, expected, fracdiff, valname, desired_diff, max_diff)
 
-        testname = self._testMethodName
-        correctval = f"< {max_diff}"
-        report = "[ {} ] {} is {} ( {} : should be {})\n".format(testname, valname, str(val), th.verdict(out), str(correctval) )
-        report = report.rstrip() + f" (raw actual/expected values: {actual}/{expected})\n"
-        return out, report
+    def check_absdiff(self, actual, expected, valname, desired_diff=0.1, max_diff=0.2):
+        """ Logs a warning if outside of desired bounds, returns False if outside required bounds
+        
+        0.1 desired, 0.2 required, as from https://drive.google.com/file/d/1zw6UeDEoXoxM05oFg3rir0hrCMEJMxkH/view and https://open-confluence.nrao.edu/display/VLASS/Updated+VLASS+survey+science+requirements+and+parameters
+        """
+        absdiff=abs(actual-expected)
+        return self.check_diff(actual, expected, absdiff, valname, desired_diff, max_diff)
 
     def check_column_exists(self, colname):
         """ Verifies that the given column exists in the self.vis measurement set. """
-        tb.open(self.vis)
-        cnt = tb.colnames().count(colname)
-        tb.done()
-        tb.close()
-        return th.check_val(cnt, 1, valname=f"count('{colname}')", exact=True, testname=self._testMethodName)
+        self.tb.open(self.vis)
+        cnt = self.tb.colnames().count(colname)
+        self.tb.done()
+        self.tb.close()
+        return self.th.check_val(cnt, 1, valname=f"count('{colname}')", exact=True, testname=self._testMethodName)
 
     def check_runtime(self, starttime, runtime613, success, report):
         """ Verifies that the runtime is within 10% of the expected runtime613.
@@ -105,10 +160,10 @@ class test_vlass_base(test_tclean_base):
         """
         endtime           = datetime.now()
         runtime           = (endtime-starttime).total_seconds()
-        successt, reportt = th.check_val(runtime, runtime613, valname="6.1.3 runtime", exact=False, epsilon=0.1, testname=self._testMethodName)
+        successt, reportt = self.th.check_val(runtime, runtime613, valname="6.1.3 runtime", exact=False, epsilon=0.1, testname=self._testMethodName)
 
         report += reportt
-        success = success and successt and th.check_final(report)
+        success = success and successt and self.th.check_final(report)
         if not success:
             casalog.post(report, "SEVERE") # easier to read this way than in an assert statement
         else:
@@ -180,8 +235,9 @@ class test_vlass_base(test_tclean_base):
             if (img not in self.imgs):
                 self.imgs.append(img)
         try:
-            tclean(**wargs)
-            pass
+            if os.getenv("USE_CACHED_TCLEAN_VALS") != "true":
+                tclean(**wargs)
+                pass
         except:
             # self.print_tclean(**wargs)
             raise
