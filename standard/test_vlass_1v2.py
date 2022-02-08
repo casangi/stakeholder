@@ -206,7 +206,7 @@ class test_j1302(test_vlass_base):
         tt0stats   = imstat(imagename=img0+'.image.tt0', box='2000,2000,2000,2000')
         tt1stats   = imstat(imagename=img0+'.image.tt1', box='2000,2000,2000,2000')
         alphastats = imstat(imagename=img0+'.alpha', box='2000,2000,2000,2000')
-        currentstats  = np.squeeze(np.array([ tt0stats['max'], tt1stats['max'], alphastats['max']]))
+        curr_stats    = np.squeeze(np.array([ tt0stats['max'], tt1stats['max'], alphastats['max']]))
         onaxis_stats  = np.array([            0.3337,          -0.01588,        -0.0476])
         casa613_stats = np.array([            0.3198292,       0.01994022,      0.06234646])
 
@@ -242,7 +242,11 @@ class test_j1302(test_vlass_base):
 
         # (f) Runtimes not significantly different relative to previous runs
         # don't test this in jupyter notebooks - runtimes differ too much between machines
-        success, report = tstobj.check_runtime(starttime, 2191, success, report)
+        if ParallelTaskHelper.isMPIEnabled():
+            # runtime with MPI -n 8
+            success, report = tstobj.check_runtime(starttime, 5373, success, report)
+        else:
+            success, report = tstobj.check_runtime(starttime, 2413, success, report)
 
         tstobj.assertTrue(success, msg=report)
 
@@ -340,11 +344,12 @@ class test_j1302(test_vlass_base):
         # (l) Ensure intermediate products exist, pbcor images, RMS image (made by imdev), and cutouts (.subim) from imsubimage
         # N/A: no pbcore, rms, or subim images are created for this test
 
-        tt1stats=imstat(imagename=imagename_base+'iter2.image.tt1',box='2625,2625,2625,2625')
-        alphastats=imstat(imagename=imagename_base+'iter2.alpha',box='2625,2625,2625,2625')
-        currentstats=np.squeeze(np.array([tt0stats['max'],tt1stats['max'],alphastats['max']]))
-        onaxis_stats=np.array([           0.3337,         -0.01588,       -0.0476])
-        casa613_stats=np.array([          0.3174496,      -0.01514572,    -0.04771062])
+        tt0stats=imstat(  imagename=img1+'.image.tt0',box='2625,2625,2625,2625')
+        tt1stats=imstat(  imagename=img1+'.image.tt1',box='2625,2625,2625,2625')
+        alphastats=imstat(imagename=img1+'.alpha',    box='2625,2625,2625,2625')
+        curr_stats=np.squeeze(np.array([tt0stats['max'],tt1stats['max'],alphastats['max']]))
+        onaxis_stats=np.array([         0.3337,         -0.01588,       -0.0476])
+        casa613_stats=np.array([        0.3174496,      -0.01514572,    -0.04771062])
 
         # (a) tt0 vs 6.1.3, on-axis
         success0, report0 = tstobj.check_fracdiff(curr_stats[0], onaxis_stats[0],  valname="Frac Diff tt0 vs. on-axis")
@@ -378,7 +383,11 @@ class test_j1302(test_vlass_base):
 
         # (f) Runtimes not significantly different relative to previous runs
         # don't test this in jupyter notebooks - runtimes differ too much between machines
-        success, report = tstobj.check_runtime(starttime, 22260, success, report)
+        if ParallelTaskHelper.isMPIEnabled():
+            # runtime with MPI -n 8
+            success, report = tstobj.check_runtime(starttime, 9625, success, report)
+        else:
+            success, report = tstobj.check_runtime(starttime, 21179, success, report)
 
         tstobj.assertTrue(success, msg=report)
 
@@ -625,7 +634,7 @@ class test_j1302(test_vlass_base):
 
         # (f) Runtimes not significantly different relative to previous runs
         # don't test this in jupyter notebooks - runtimes differ too much between machines
-        success, report = tstobj.check_runtime(starttime, 9144, success, report)
+        success, report = tstobj.check_runtime(starttime, 7167, success, report)
 
         tstobj.assertTrue(success, msg=report)
 
@@ -743,7 +752,7 @@ class test_j1302(test_vlass_base):
 
         # (f) Runtimes not significantly different relative to previous runs
         # don't test this in jupyter notebooks - runtimes differ too much between machines
-        success, report = tstobj.check_runtime(starttime, 2218, success, report)
+        success, report = tstobj.check_runtime(starttime, 1805, success, report)
 
         tstobj.assertTrue(success, msg=report)
 
@@ -885,7 +894,11 @@ class test_j1927(test_vlass_base):
 
         # (f) Runtimes not significantly different relative to previous runs
         # don't test this in jupyter notebooks - runtimes differ too much between machines
-        success, report = tstobj.check_runtime(starttime, 1543, success, report)
+        if ParallelTaskHelper.isMPIEnabled():
+            # runtime with MPI -n 8
+            success, report = tstobj.check_runtime(starttime, 7129, success, report)
+        else:
+            success, report = tstobj.check_runtime(starttime, 4415, success, report)
 
         tstobj.assertTrue(success, msg=report)
 
@@ -1103,7 +1116,7 @@ class test_j1927(test_vlass_base):
 
         # (f) Runtimes not significantly different relative to previous runs
         # don't test this in jupyter notebooks - runtimes differ too much between machines
-        success, report = tstobj.check_runtime(starttime, 1543, success, report)
+        success, report = tstobj.check_runtime(starttime, 15329, success, report)
 
         tstobj.assertTrue(success, msg=report)
 
@@ -1222,7 +1235,7 @@ class test_j1927(test_vlass_base):
 
         # (f) Runtimes not significantly different relative to previous runs
         # don't test this in jupyter notebooks - runtimes differ too much between machines
-        success, report = tstobj.check_runtime(starttime, 1543, success, report)
+        success, report = tstobj.check_runtime(starttime, 4277, success, report)
 
         tstobj.assertTrue(success, msg=report)
 
