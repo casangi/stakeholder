@@ -106,6 +106,15 @@ from casatasks.private.parallel.parallel_task_helper import ParallelTaskHelper
 
 from baseclass.vlass_base_class import test_vlass_base
 
+quick_test = True
+if ('FULL_TEST' in os.environ):
+    casalog.post("FULL_TEST env variable found\nRunning tests with full image sizes", "INFO")
+    quick_test = False
+else:
+    casalog.post("FULL_TEST env variable not found\nRunning tests with reduced image sizes", "INFO")
+quick_imsize = '1' if ('QUICK_IMSIZE' not in os.environ) else os.environ('QUICK_IMSIZE')
+quick_spwsel = '0' if ('QUICK_SPWSEL' not in os.environ) else '1'
+
 ##############################################
 ##############################################
 class test_j1302(test_vlass_base):
@@ -138,6 +147,8 @@ class test_j1302(test_vlass_base):
         tstobj.data_path_dir  = 'J1302/Stakeholder-test-mosaic-data'
         img0 = 'J1302_iter2'
         tstobj.prepData('secondmask.mask','QLcatmask.mask')
+        imsize = 4000
+        spw = ''
 
         #####################################################
         # %% Set local vars [test_j1302_mosaic_noncube] end @
@@ -145,6 +156,15 @@ class test_j1302(test_vlass_base):
 
         # not part of the jupyter scripts
         starttime = datetime.now()
+        if quick_test:
+            if quick_imsize == '1':
+                imsize = 1000
+            if quick_imsize == '2':
+                imsize = 2000
+            if quick_spwsel == '1':
+                spw = "*:0~3"
+            tstobj.resize_mask('QLcatmask.mask', 'QLcatmask.mask', [imsize, imsize])
+            tstobj.resize_mask('secondmask.mask', 'secondmask.mask', [imsize, imsize])
 
         # .......................................
         # %% Prepare masks [test_j1302_mosaic_noncube] start @
@@ -163,8 +183,8 @@ class test_j1302(test_vlass_base):
                        niter=None, compare_tclean_pars=None, datacolumn=None,
                        imagename=img0, phasecenter=tstobj.phasecenter, reffreq='3.0GHz',
                        mask='', usemask='user', pbmask=0.0, deconvolver='mtmfs',
-                       cell='0.6arcsec', imsize=4000, gridder='mosaic', uvtaper=[''],
-                       restoringbeam=[], mosweight=False, rotatepastep=5.0,
+                       cell='0.6arcsec', imsize=imsize, spw=spw, gridder='mosaic',
+                       uvtaper=[''], restoringbeam=[], mosweight=False, rotatepastep=5.0,
                        smallscalebias=0.4, pblimit=0.1, scales=[0], weighting='briggs',
                        robust=1.0, nsigma=2.0, cycleniter=500, cyclefactor=3.0,
                        savemodel='none', interactive=0, calcres=False, calcpsf=False):
@@ -203,9 +223,11 @@ class test_j1302(test_vlass_base):
         # (l) Ensure intermediate products exist, pbcor images, RMS image (made by imdev), and cutouts (.subim) from imsubimage
         # N/A for this test
 
-        tt0stats   = imstat(imagename=img0+'.image.tt0', box='2000,2000,2000,2000')
-        tt1stats   = imstat(imagename=img0+'.image.tt1', box='2000,2000,2000,2000')
-        alphastats = imstat(imagename=img0+'.alpha', box='2000,2000,2000,2000')
+        halfsize   = imsize / 4000 * 2000
+        box        = f"{halfsize},{halfsize},{halfsize},{halfsize}"
+        tt0stats   = imstat(imagename=img0+'.image.tt0', box=box)
+        tt1stats   = imstat(imagename=img0+'.image.tt1', box=box)
+        alphastats = imstat(imagename=img0+'.alpha', box=box)
         curr_stats    = np.squeeze(np.array([ tt0stats['max'], tt1stats['max'], alphastats['max']]))
         onaxis_stats  = np.array([            0.3337,          -0.01588,        -0.0476])
         casa613_stats = np.array([            0.3198292,       0.01994022,      0.06234646])
@@ -240,6 +262,10 @@ class test_j1302(test_vlass_base):
         ##############################################################
         # not part of the jupyter scripts
 
+        # save results for future analysis
+        np.save(tstobj.id()+'.tt0tt1alpha.npy', curr_stats)
+        np.save(tstobj.id()+'.beamstats.npy', beamstats_curr)
+
         # (f) Runtimes not significantly different relative to previous runs
         # don't test this in jupyter notebooks - runtimes differ too much between machines
         if ParallelTaskHelper.isMPIEnabled():
@@ -265,10 +291,15 @@ class test_j1302(test_vlass_base):
 
         #previous steps in the pipeline would have created mask files from catalogs and images that were created as an
         #intermediate pipeline step.
-        tstobj.data_path_dir  = 'J1302/Stakeholder-test-mosaic-data'
+        tstobj.data_path_dir  = 'J1302/Stakeholder-test-awproject-data'
         img0 = 'J1302_iter0d'
         img1 = 'J1302_iter2'
-        tstobj.prepData()
+        # tstobj.prepData()
+        tstobj.prepData(f"cfcache/{img0}.cf", f"cfcache/{img1}.cf", "QLcatmask.mask", "secondmask.mask")
+        # os.system(f"mv cfcache/{img0}.cf cache0d.cf")
+        # os.system(f"mv cfcache/{img1}.cf cache2.cf")
+        # os.system(f"ls -lh --color")
+        imsize = 5250
 
         ################################################
         # %% Set local vars [test_j1302_awproject] end @
@@ -276,15 +307,31 @@ class test_j1302(test_vlass_base):
 
         # not part of the jupyter scripts
         starttime = datetime.now()
+        if quick_test:
+            if quick_imsize == '1':
+                imsize = 1312
+            if quick_imsize == '2':
+                imsize = 2625
+            tstobj.resize_mask('QLcatmask.mask', 'QLcatmask.mask', [imsize,imsize])
+            tstobj.resize_mask('secondmask.mask', 'secondmask.mask', [imsize,imsize])
 
         # .......................................
-        # %% Run tclean [test_j1302_awproject] start   @
-        ################################################
+        # %% Prepare masks [test_j1302_mosaic_noncube] start @
+        ######################################################
+
+        # combine first and 2nd order masks
+        immath(imagename=['secondmask.mask','QLcatmask.mask'],expr='IM0+IM1',outfile='sum_of_masks.mask') # comment out to use cached tclean vals
+        tstobj.im.mask(image='sum_of_masks.mask',mask='combined.mask',threshold=0.5) # comment out to use cached tclean vals
+
+        ####################################################
+        # %% Prepare masks [test_j1302_mosaic_noncube] end @
+        # %% Run tclean [test_j1302_awproject] start       @
+        ####################################################
 
         def run_tclean(vis=tstobj.vis, datacolumn='corrected', intent='OBSERVE_TARGET#UNSPECIFIED',
                        imagename=None, niter=None, compare_tclean_pars=None,
                        phasecenter=tstobj.phasecenter, reffreq='3.0GHz', deconvolver='mtmfs',
-                       cell='0.6arcsec', imsize=5250, mask='', usemask='user', pbmask=0.0,
+                       cell='0.6arcsec', imsize=imsize, mask='', usemask='user', pbmask=0.0, cfcache="",
                        wbawp=True, gridder='awproject', uvtaper=[''], uvrange='<12km',
                        restoringbeam=[], wprojplanes=32, mosweight=False, conjbeams=True,
                        usepointing=True, rotatepastep=5.0, pblimit=0.02, scales=[0],
@@ -303,37 +350,37 @@ class test_j1302(test_vlass_base):
 
         script_pars_vals_0 = tstobj.get_params_as_dict(vis='J1302-12fields.ms', selectdata=True, field='', spw='', timerange='', uvrange='<12km', antenna='', scan='', observation='', intent='OBSERVE_TARGET#UNSPECIFIED', datacolumn='corrected', imagename='J1302_iter0d', imsize=5250, cell='0.6arcsec', phasecenter='13:03:13.874 -10.51.16.73', stokes='I', projection='SIN', startmodel='', specmode='mfs', reffreq='3.0GHz', nchan=-1, start='', width='', outframe='LSRK', veltype='radio', restfreq=[], interpolation='linear', perchanweightdensity=True, gridder='awproject', facets=1, psfphasecenter='', chanchunks=1, wprojplanes=32, vptable='', mosweight=False, aterm=True, psterm=False, wbawp=False, conjbeams=True, cfcache='', usepointing=True, computepastep=360.0, rotatepastep=5.0, pointingoffsetsigdev=[300, 30], pblimit=0.02, normtype='flatnoise', deconvolver='mtmfs', scales=[0], nterms=2, smallscalebias=0.4, restoration=True, restoringbeam=[], pbcor=False, outlierfile='', weighting='briggs', robust=1.0, noise='1.0Jy', npixels=0, uvtaper=[''], niter=0, gain=0.1, threshold=0.0, nsigma=2.0, cycleniter=5000, cyclefactor=3.0, minpsffraction=0.05, maxpsffraction=0.8, interactive=False, usemask='user', mask='', pbmask=0.0, sidelobethreshold=3.0, noisethreshold=5.0, lownoisethreshold=1.5, negativethreshold=0.0, smoothfactor=1.0, minbeamfrac=0.3, cutthreshold=0.01, growiterations=75, dogrowprune=True, minpercentchange=-1.0, verbose=False, fastnoise=True, restart=True, savemodel='none', calcres=False, calcpsf=True, parallel=False )
         script_pars_vals_1 = tstobj.get_params_as_dict(vis='J1302-12fields.ms', selectdata=True, field='', spw='', timerange='', uvrange='<12km', antenna='', scan='', observation='', intent='OBSERVE_TARGET#UNSPECIFIED', datacolumn='corrected', imagename='J1302_iter2', imsize=5250, cell='0.6arcsec', phasecenter='13:03:13.874 -10.51.16.73', stokes='I', projection='SIN', startmodel='', specmode='mfs', reffreq='3.0GHz', nchan=-1, start='', width='', outframe='LSRK', veltype='radio', restfreq=[], interpolation='linear', perchanweightdensity=True, gridder='awproject', facets=1, psfphasecenter='', chanchunks=1, wprojplanes=32, vptable='', mosweight=False, aterm=True, psterm=False, wbawp=True, conjbeams=True, cfcache='', usepointing=True, computepastep=360.0, rotatepastep=5.0, pointingoffsetsigdev=[300, 30], pblimit=0.02, normtype='flatnoise', deconvolver='mtmfs', scales=[0], nterms=2, smallscalebias=0.4, restoration=True, restoringbeam=[], pbcor=False, outlierfile='', weighting='briggs', robust=1.0, noise='1.0Jy', npixels=0, uvtaper=[''], niter=0, gain=0.1, threshold=0.0, nsigma=2.0, cycleniter=5000, cyclefactor=3.0, minpsffraction=0.05, maxpsffraction=0.8, interactive=False, usemask='user', mask='', pbmask=0.0, sidelobethreshold=3.0, noisethreshold=5.0, lownoisethreshold=1.5, negativethreshold=0.0, smoothfactor=1.0, minbeamfrac=0.3, cutthreshold=0.01, growiterations=75, dogrowprune=True, minpercentchange=-1.0, verbose=False, fastnoise=True, restart=True, savemodel='none', calcres=True, calcpsf=True, parallel=False )
-        script_pars_vals_2 = tstobj.get_params_as_dict(vis='J1302-12fields.ms', selectdata=True, field='', spw='', timerange='', uvrange='<12km', antenna='', scan='', observation='', intent='OBSERVE_TARGET#UNSPECIFIED', datacolumn='corrected', imagename='J1302_iter2', imsize=5250, cell='0.6arcsec', phasecenter='13:03:13.874 -10.51.16.73', stokes='I', projection='SIN', startmodel='', specmode='mfs', reffreq='3.0GHz', nchan=-1, start='', width='', outframe='LSRK', veltype='radio', restfreq=[], interpolation='linear', perchanweightdensity=True, gridder='awproject', facets=1, psfphasecenter='', chanchunks=1, wprojplanes=32, vptable='', mosweight=False, aterm=True, psterm=False, wbawp=True, conjbeams=True, cfcache='', usepointing=True, computepastep=360.0, rotatepastep=5.0, pointingoffsetsigdev=[300, 30], pblimit=0.02, normtype='flatnoise', deconvolver='mtmfs', scales=[0, 5, 12], nterms=2, smallscalebias=0.4, restoration=True, restoringbeam=[], pbcor=False, outlierfile='', weighting='briggs', robust=1.0, noise='1.0Jy', npixels=0, uvtaper=[''], niter=20000, gain=0.1, threshold=0.0, nsigma=3.0, cycleniter=3000, cyclefactor=3.0, minpsffraction=0.05, maxpsffraction=0.8, interactive=False, usemask='user', mask='J1302_QLcatmask.mask', pbmask=0.0, sidelobethreshold=3.0, noisethreshold=5.0, lownoisethreshold=1.5, negativethreshold=0.0, smoothfactor=1.0, minbeamfrac=0.3, cutthreshold=0.01, growiterations=75, dogrowprune=True, minpercentchange=-1.0, verbose=False, fastnoise=True, restart=True, savemodel='none', calcres=False, calcpsf=False, parallel=False )
+        script_pars_vals_2 = tstobj.get_params_as_dict(vis='J1302-12fields.ms', selectdata=True, field='', spw='', timerange='', uvrange='<12km', antenna='', scan='', observation='', intent='OBSERVE_TARGET#UNSPECIFIED', datacolumn='corrected', imagename='J1302_iter2', imsize=5250, cell='0.6arcsec', phasecenter='13:03:13.874 -10.51.16.73', stokes='I', projection='SIN', startmodel='', specmode='mfs', reffreq='3.0GHz', nchan=-1, start='', width='', outframe='LSRK', veltype='radio', restfreq=[], interpolation='linear', perchanweightdensity=True, gridder='awproject', facets=1, psfphasecenter='', chanchunks=1, wprojplanes=32, vptable='', mosweight=False, aterm=True, psterm=False, wbawp=True, conjbeams=True, cfcache='', usepointing=True, computepastep=360.0, rotatepastep=5.0, pointingoffsetsigdev=[300, 30], pblimit=0.02, normtype='flatnoise', deconvolver='mtmfs', scales=[0, 5, 12], nterms=2, smallscalebias=0.4, restoration=True, restoringbeam=[], pbcor=False, outlierfile='', weighting='briggs', robust=1.0, noise='1.0Jy', npixels=0, uvtaper=[''], niter=20000, gain=0.1, threshold=0.0, nsigma=3.0, cycleniter=3000, cyclefactor=3.0, minpsffraction=0.05, maxpsffraction=0.8, interactive=False, usemask='user', mask='QLcatmask.mask', pbmask=0.0, sidelobethreshold=3.0, noisethreshold=5.0, lownoisethreshold=1.5, negativethreshold=0.0, smoothfactor=1.0, minbeamfrac=0.3, cutthreshold=0.01, growiterations=75, dogrowprune=True, minpercentchange=-1.0, verbose=False, fastnoise=True, restart=True, savemodel='none', calcres=False, calcpsf=False, parallel=False )
         script_pars_vals_3 = tstobj.get_params_as_dict(vis='J1302-12fields.ms', selectdata=True, field='', spw='', timerange='', uvrange='<12km', antenna='', scan='', observation='', intent='OBSERVE_TARGET#UNSPECIFIED', datacolumn='data', imagename='J1302_iter2', imsize=5250, cell='0.6arcsec', phasecenter='13:03:13.874 -10.51.16.73', stokes='I', projection='SIN', startmodel='', specmode='mfs', reffreq='3.0GHz', nchan=-1, start='', width='', outframe='LSRK', veltype='radio', restfreq=[], interpolation='linear', perchanweightdensity=True, gridder='awproject', facets=1, psfphasecenter='', chanchunks=1, wprojplanes=32, vptable='', mosweight=False, aterm=True, psterm=False, wbawp=True, conjbeams=True, cfcache='', usepointing=True, computepastep=360.0, rotatepastep=5.0, pointingoffsetsigdev=[300, 30], pblimit=0.02, normtype='flatnoise', deconvolver='mtmfs', scales=[0], nterms=2, smallscalebias=0.4, restoration=True, restoringbeam=[], pbcor=False, outlierfile='', weighting='briggs', robust=1.0, noise='1.0Jy', npixels=0, uvtaper=[''], niter=0, gain=0.1, threshold=0.0, nsigma=2.0, cycleniter=5000, cyclefactor=3.0, minpsffraction=0.05, maxpsffraction=0.8, interactive=False, usemask='user', mask='', pbmask=0.0, sidelobethreshold=3.0, noisethreshold=5.0, lownoisethreshold=1.5, negativethreshold=0.0, smoothfactor=1.0, minbeamfrac=0.3, cutthreshold=0.01, growiterations=75, dogrowprune=True, minpercentchange=-1.0, verbose=False, fastnoise=True, restart=True, savemodel='modelcolumn', calcres=False, calcpsf=False, parallel=False )
-        script_pars_vals_4 = tstobj.get_params_as_dict(vis='J1302-12fields.ms', selectdata=True, field='', spw='', timerange='', uvrange='<12km', antenna='', scan='', observation='', intent='OBSERVE_TARGET#UNSPECIFIED', datacolumn='corrected', imagename='J1302_iter2', imsize=5250, cell='0.6arcsec', phasecenter='13:03:13.874 -10.51.16.73', stokes='I', projection='SIN', startmodel='', specmode='mfs', reffreq='3.0GHz', nchan=-1, start='', width='', outframe='LSRK', veltype='radio', restfreq=[], interpolation='linear', perchanweightdensity=True, gridder='awproject', facets=1, psfphasecenter='', chanchunks=1, wprojplanes=32, vptable='', mosweight=False, aterm=True, psterm=False, wbawp=True, conjbeams=True, cfcache='', usepointing=True, computepastep=360.0, rotatepastep=5.0, pointingoffsetsigdev=[300, 30], pblimit=0.02, normtype='flatnoise', deconvolver='mtmfs', scales=[0, 5, 12], nterms=2, smallscalebias=0.4, restoration=True, restoringbeam=[], pbcor=False, outlierfile='', weighting='briggs', robust=1.0, noise='1.0Jy', npixels=0, uvtaper=[''], niter=20000, gain=0.1, threshold=0.0, nsigma=3.0, cycleniter=3000, cyclefactor=3.0, minpsffraction=0.05, maxpsffraction=0.8, interactive=False, usemask='user', mask='J1302_combined.mask', pbmask=0.0, sidelobethreshold=3.0, noisethreshold=5.0, lownoisethreshold=1.5, negativethreshold=0.0, smoothfactor=1.0, minbeamfrac=0.3, cutthreshold=0.01, growiterations=75, dogrowprune=True, minpercentchange=-1.0, verbose=False, fastnoise=True, restart=True, savemodel='none', calcres=False, calcpsf=False, parallel=False )
+        script_pars_vals_4 = tstobj.get_params_as_dict(vis='J1302-12fields.ms', selectdata=True, field='', spw='', timerange='', uvrange='<12km', antenna='', scan='', observation='', intent='OBSERVE_TARGET#UNSPECIFIED', datacolumn='corrected', imagename='J1302_iter2', imsize=5250, cell='0.6arcsec', phasecenter='13:03:13.874 -10.51.16.73', stokes='I', projection='SIN', startmodel='', specmode='mfs', reffreq='3.0GHz', nchan=-1, start='', width='', outframe='LSRK', veltype='radio', restfreq=[], interpolation='linear', perchanweightdensity=True, gridder='awproject', facets=1, psfphasecenter='', chanchunks=1, wprojplanes=32, vptable='', mosweight=False, aterm=True, psterm=False, wbawp=True, conjbeams=True, cfcache='', usepointing=True, computepastep=360.0, rotatepastep=5.0, pointingoffsetsigdev=[300, 30], pblimit=0.02, normtype='flatnoise', deconvolver='mtmfs', scales=[0, 5, 12], nterms=2, smallscalebias=0.4, restoration=True, restoringbeam=[], pbcor=False, outlierfile='', weighting='briggs', robust=1.0, noise='1.0Jy', npixels=0, uvtaper=[''], niter=20000, gain=0.1, threshold=0.0, nsigma=3.0, cycleniter=3000, cyclefactor=3.0, minpsffraction=0.05, maxpsffraction=0.8, interactive=False, usemask='user', mask='combined.mask', pbmask=0.0, sidelobethreshold=3.0, noisethreshold=5.0, lownoisethreshold=1.5, negativethreshold=0.0, smoothfactor=1.0, minbeamfrac=0.3, cutthreshold=0.01, growiterations=75, dogrowprune=True, minpercentchange=-1.0, verbose=False, fastnoise=True, restart=True, savemodel='none', calcres=False, calcpsf=False, parallel=False )
         script_pars_vals_5 = tstobj.get_params_as_dict(vis='J1302-12fields.ms', selectdata=True, field='', spw='', timerange='', uvrange='<12km', antenna='', scan='', observation='', intent='OBSERVE_TARGET#UNSPECIFIED', datacolumn='corrected', imagename='J1302_iter2', imsize=5250, cell='0.6arcsec', phasecenter='13:03:13.874 -10.51.16.73', stokes='I', projection='SIN', startmodel='', specmode='mfs', reffreq='3.0GHz', nchan=-1, start='', width='', outframe='LSRK', veltype='radio', restfreq=[], interpolation='linear', perchanweightdensity=True, gridder='awproject', facets=1, psfphasecenter='', chanchunks=1, wprojplanes=32, vptable='', mosweight=False, aterm=True, psterm=False, wbawp=True, conjbeams=True, cfcache='', usepointing=True, computepastep=360.0, rotatepastep=5.0, pointingoffsetsigdev=[300, 30], pblimit=0.02, normtype='flatnoise', deconvolver='mtmfs', scales=[0, 5, 12], nterms=2, smallscalebias=0.4, restoration=True, restoringbeam=[], pbcor=False, outlierfile='', weighting='briggs', robust=1.0, noise='1.0Jy', npixels=0, uvtaper=[''], niter=20000, gain=0.1, threshold=0.0, nsigma=4.5, cycleniter=500, cyclefactor=3.0, minpsffraction=0.05, maxpsffraction=0.8, interactive=False, usemask='pb', mask='', pbmask=0.4, sidelobethreshold=3.0, noisethreshold=5.0, lownoisethreshold=1.5, negativethreshold=0.0, smoothfactor=1.0, minbeamfrac=0.3, cutthreshold=0.01, growiterations=75, dogrowprune=True, minpercentchange=-1.0, verbose=False, fastnoise=True, restart=True, savemodel='none', calcres=False, calcpsf=False, parallel=False )
 
         # create robust psfs with wbawp=False using corrected column
-        run_tclean(imagename=img0, niter=0, calcres=False, wbawp=False, 
+        run_tclean(imagename=img0, cfcache="cache0d.cf", niter=0, calcres=False, wbawp=False,
                    compare_tclean_pars=script_pars_vals_0)
 
         # initialize iter2, no cleaning
-        run_tclean(imagename=img1, niter=0, compare_tclean_pars=script_pars_vals_1)
+        run_tclean(imagename=img1, cfcache="cache2.cf", niter=0, compare_tclean_pars=script_pars_vals_1)
 
         #  replace iter2 psf with no_WBAP
         replace_psf(img1, img0)
 
         #  resume iter2 with QL mask
-        run_tclean(imagename=img1, niter=20000, scales=[0, 5, 12], nsigma=3.0, cycleniter=3000,
-                   mask="J1302_QLcatmask.mask", calcres=False, calcpsf=False, compare_tclean_pars=script_pars_vals_2)
+        run_tclean(imagename=img1, cfcache="cache2.cf", niter=20000, scales=[0, 5, 12], nsigma=3.0, cycleniter=3000,
+                   mask="QLcatmask.mask", calcres=False, calcpsf=False, compare_tclean_pars=script_pars_vals_2)
 
         # save model column, doesn't happen here in acutal VLASS pipeline, but makes sure functionality works.
-        run_tclean(imagename=img1, niter=0, datacolumn='data', calcres=False, calcpsf=False,
+        run_tclean(imagename=img1, cfcache="cache2.cf", niter=0, datacolumn='data', calcres=False, calcpsf=False,
                    savemodel='modelcolumn', compare_tclean_pars=script_pars_vals_3)
 
         # resume iter2 with combined mask
         os.system(f"rm -rf {img1}.mask")
-        run_tclean(imagename=img1, niter=20000, scales=[0, 5, 12], nsigma=3.0, cycleniter=3000,
-                   mask="J1302_combined.mask", calcres=False, calcpsf=False, compare_tclean_pars=script_pars_vals_4)
+        run_tclean(imagename=img1, cfcache="cache2.cf", niter=20000, scales=[0, 5, 12], nsigma=3.0, cycleniter=3000,
+                   mask="combined.mask", calcres=False, calcpsf=False, compare_tclean_pars=script_pars_vals_4)
 
         # resume iter2 with pbmask, removed old mask first then specify pbmask in resumption of tclean
         os.system(f"rm -rf {img1}.mask")
-        run_tclean(imagename=img1, niter=20000, scales=[0, 5, 12], nsigma=4.5, cycleniter=500,
+        run_tclean(imagename=img1, cfcache="cache2.cf", niter=20000, scales=[0, 5, 12], nsigma=4.5, cycleniter=500,
                    mask="", calcres=False, calcpsf=False, usemask='pb', pbmask=0.4, compare_tclean_pars=script_pars_vals_5)
 
         ###########################################################
@@ -344,9 +391,11 @@ class test_j1302(test_vlass_base):
         # (l) Ensure intermediate products exist, pbcor images, RMS image (made by imdev), and cutouts (.subim) from imsubimage
         # N/A: no pbcore, rms, or subim images are created for this test
 
-        tt0stats=imstat(  imagename=img1+'.image.tt0',box='2625,2625,2625,2625')
-        tt1stats=imstat(  imagename=img1+'.image.tt1',box='2625,2625,2625,2625')
-        alphastats=imstat(imagename=img1+'.alpha',    box='2625,2625,2625,2625')
+        halfsize   = imsize / 5250 * 2625
+        box        = f"{halfsize},{halfsize},{halfsize},{halfsize}"
+        tt0stats=imstat(  imagename=img1+'.image.tt0',box=box)
+        tt1stats=imstat(  imagename=img1+'.image.tt1',box=box)
+        alphastats=imstat(imagename=img1+'.alpha',    box=box)
         curr_stats=np.squeeze(np.array([tt0stats['max'],tt1stats['max'],alphastats['max']]))
         onaxis_stats=np.array([         0.3337,         -0.01588,       -0.0476])
         casa613_stats=np.array([        0.3174496,      -0.01514572,    -0.04771062])
@@ -381,13 +430,19 @@ class test_j1302(test_vlass_base):
         #########################################################
         # not part of the jupyter scripts
 
+        # save results for future analysis
+        np.save(tstobj.id()+'.tt0stats.npy', tt0stats)
+        np.save(tstobj.id()+'.tt1stats.npy', tt1stats)
+        np.save(tstobj.id()+'.alphastats.npy', alphastats)
+        np.save(tstobj.id()+'.beamstats.npy', beamstats_curr)
+
         # (f) Runtimes not significantly different relative to previous runs
         # don't test this in jupyter notebooks - runtimes differ too much between machines
         if ParallelTaskHelper.isMPIEnabled():
             # runtime with MPI -n 8
-            success, report = tstobj.check_runtime(starttime, 9625, success, report)
+            success, report = tstobj.check_runtime(starttime, 9594, success, report) # 5853 with cfcache
         else:
-            success, report = tstobj.check_runtime(starttime, 21179, success, report)
+            success, report = tstobj.check_runtime(starttime, 20955, success, report) # 12219 with cfcache
 
         tstobj.assertTrue(success, msg=report)
 
@@ -408,7 +463,9 @@ class test_j1302(test_vlass_base):
         #previous steps in the pipeline would have created mask files from catalogs and images that were created as an
         #intermediate pipeline step.
         tstobj.data_path_dir  = 'J1302/Stakeholder-test-mosaic-cube-data'
-        tstobj.prepData()
+        tstobj.prepData("QLcatmask.mask", "combined.mask")
+        imsize = 4000
+        spw_chans = ''
 
         # reference frequence to use per spectral window (spw)
         refFreqDict  = {
@@ -436,6 +493,15 @@ class test_j1302(test_vlass_base):
 
         # not part of the jupyter scripts
         starttime = datetime.now()
+        if quick_test:
+            if quick_imsize == '1':
+                imsize = 1000
+            if quick_imsize == '2':
+                imsize = 2000
+            if quick_spwsel == '1':
+                spw_chans = ":0~3"
+            tstobj.resize_mask("QLcatmask.mask", "QLcatmask.mask", [imsize,imsize])
+            tstobj.resize_mask("combined.mask", "combined.mask", [imsize,imsize])
 
         # .......................................
         # %% Run tclean [test_j1302_mosaic_cube] start   @
@@ -444,9 +510,9 @@ class test_j1302(test_vlass_base):
         def iname(image_iter, spw, stokes): # imagename=imagename_base+image_iter+'_'+spw.replace('~','-')+'_'+stokes
             return 'J1302_'+image_iter+'_'+spw.replace('~','-')+'_'+stokes
 
-        def run_tclean(vis=tstobj.vis, uvrange='<12km', imsize=4000, intent='OBSERVE_TARGET#UNSPECIFIED',
-                       imagename=None, niter=None, compare_tclean_pars=None,
-                       cell='0.6arcsec', datacolumn='data', phasecenter=tstobj.phasecenter, spw='',
+        def run_tclean(vis=tstobj.vis, uvrange='<12km', imsize=imsize, intent='OBSERVE_TARGET#UNSPECIFIED',
+                       imagename=None, niter=None, compare_tclean_pars=None, spw=None,
+                       cell='0.6arcsec', datacolumn='data', phasecenter=tstobj.phasecenter,
                        stokes='I', reffreq='3.0GHz', deconvolver='mtmfs', gridder='mosaic',
                        restoringbeam=[], usemask='user', mask='', pbmask=0.0, mosweight=False,
                        rotatepastep=5.0, pblimit=0.1, scales=[0], nterms=1, weighting='briggs',
@@ -484,47 +550,49 @@ class test_j1302(test_vlass_base):
         }
 
         for spw in spws:
-           for stokes in stokesParams:
-              # initialize iter2, no cleaning
-              image_iter='iter2'
-              imagename = iname(image_iter, spw, stokes)
-              run_tclean( imagename=imagename, datacolumn='corrected', niter=0, spw=spw,
-                          stokes=stokes, reffreq=refFreqDict[spw], compare_tclean_pars=script_pars_vals_0[spw][stokes] )
+            spw_str = f"{spw}{spw_chans}"
+            for stokes in stokesParams:
+                # initialize iter2, no cleaning
+                image_iter='iter2'
+                imagename = iname(image_iter, spw, stokes)
+                run_tclean( imagename=imagename, datacolumn='corrected', niter=0, spw=spw_str,
+                            stokes=stokes, reffreq=refFreqDict[spw], compare_tclean_pars=script_pars_vals_0[spw][stokes] )
 
-              # resume iter2 with QL mask
-              run_tclean( imagename=imagename, datacolumn='corrected', scales=[0,5,12], nsigma=3.0, niter=20000, cycleniter=500,   
-                          mask="QLcatmask.mask", calcres=False, calcpsf=False, spw=spw,
-                          stokes=stokes, reffreq=refFreqDict[spw], compare_tclean_pars=script_pars_vals_1[spw][stokes] )
+                # resume iter2 with QL mask
+                run_tclean( imagename=imagename, datacolumn='corrected', scales=[0,5,12], nsigma=3.0, niter=20000, cycleniter=500,   
+                            mask="QLcatmask.mask", calcres=False, calcpsf=False, spw=spw_str,
+                            stokes=stokes, reffreq=refFreqDict[spw], compare_tclean_pars=script_pars_vals_1[spw][stokes] )
 
-              # resume iter2 with combined mask
-              os.system('rm -rf *.workdirectory')
-              os.system('rm -rf *iter2*.mask')
-              run_tclean( imagename=imagename, datacolumn='corrected', scales=[0,5,12], nsigma=3.0, niter=20000, cycleniter=500,
-                          mask="combined.mask", calcres=False, calcpsf=False, spw=spw,
-                          stokes=stokes, reffreq=refFreqDict[spw], compare_tclean_pars=script_pars_vals_2[spw][stokes])
+                # resume iter2 with combined mask
+                os.system('rm -rf *.workdirectory')
+                os.system('rm -rf *iter2*.mask')
+                run_tclean( imagename=imagename, datacolumn='corrected', scales=[0,5,12], nsigma=3.0, niter=20000, cycleniter=500,
+                            mask="combined.mask", calcres=False, calcpsf=False, spw=spw_str,
+                            stokes=stokes, reffreq=refFreqDict[spw], compare_tclean_pars=script_pars_vals_2[spw][stokes])
 
-              # os.system('rm -rf iter2*.mask')
-              run_tclean( imagename=imagename, datacolumn='corrected', scales=[0,5,12], nsigma=4.5, niter=20000, cycleniter=100,
-                          mask="", calcres=False, calcpsf=False, usemask='pb', pbmask=0.4, spw=spw,
-                          stokes=stokes, reffreq=refFreqDict[spw], compare_tclean_pars=script_pars_vals_3[spw][stokes] )
+                # os.system('rm -rf iter2*.mask')
+                run_tclean( imagename=imagename, datacolumn='corrected', scales=[0,5,12], nsigma=4.5, niter=20000, cycleniter=100,
+                            mask="", calcres=False, calcpsf=False, usemask='pb', pbmask=0.4, spw=spw_str,
+                            stokes=stokes, reffreq=refFreqDict[spw], compare_tclean_pars=script_pars_vals_3[spw][stokes] )
 
-              tt0statsI=imstat(imagename=imagename+'.image.tt0',box='2000,2000,2000,2000',stokes='I')
-              tt0statsQ=imstat(imagename=imagename+'.image.tt0',box='2000,2000,2000,2000',stokes='Q')
-              tt0statsU=imstat(imagename=imagename+'.image.tt0',box='2000,2000,2000,2000',stokes='U')
-              tt0statsV=imstat(imagename=imagename+'.image.tt0',box='2000,2000,2000,2000',stokes='V')
-              spwstats[spw]['IQUV']=np.squeeze(np.array([tt0statsI['max'],tt0statsQ['max'],tt0statsU['max'],tt0statsV['max']]))
-              rmstt0statsI=imstat(imagename=imagename+'.residual.tt0',stokes='I')
-              rmstt0statsQ=imstat(imagename=imagename+'.residual.tt0',stokes='Q')
-              rmstt0statsU=imstat(imagename=imagename+'.residual.tt0',stokes='U')
-              rmstt0statsV=imstat(imagename=imagename+'.residual.tt0',stokes='V')
-              spwstats[spw]['IQUV']=np.squeeze(np.array([tt0statsI['max'],tt0statsQ['max'],tt0statsU['max'],tt0statsV['max']]))
-              spwstats[spw]['rmsIQUV']=np.squeeze(np.array([rmstt0statsI['rms'],rmstt0statsQ['rms'],rmstt0statsU['rms'],rmstt0statsV['rms']]))
-              spwstats[spw]['SNR']=((spwstats[spw]['IQUV']/spwstats[spw]['rmsIQUV'])**2)**0.5
+                halfsize = imsize / 4000 * 2000
+                box      = f"{halfsize},{halfsize},{halfsize},{halfsize}"
+                tt0statsI=imstat(imagename=imagename+'.image.tt0',box=box,stokes='I')
+                tt0statsQ=imstat(imagename=imagename+'.image.tt0',box=box,stokes='Q')
+                tt0statsU=imstat(imagename=imagename+'.image.tt0',box=box,stokes='U')
+                tt0statsV=imstat(imagename=imagename+'.image.tt0',box=box,stokes='V')
+                rmstt0statsI=imstat(imagename=imagename+'.residual.tt0',stokes='I')
+                rmstt0statsQ=imstat(imagename=imagename+'.residual.tt0',stokes='Q')
+                rmstt0statsU=imstat(imagename=imagename+'.residual.tt0',stokes='U')
+                rmstt0statsV=imstat(imagename=imagename+'.residual.tt0',stokes='V')
+                spwstats[spw]['IQUV']=np.squeeze(np.array([tt0statsI['max'],tt0statsQ['max'],tt0statsU['max'],tt0statsV['max']]))
+                spwstats[spw]['rmsIQUV']=np.squeeze(np.array([rmstt0statsI['rms'],rmstt0statsQ['rms'],rmstt0statsU['rms'],rmstt0statsV['rms']]))
+                spwstats[spw]['SNR']=((spwstats[spw]['IQUV']/spwstats[spw]['rmsIQUV'])**2)**0.5
 
-              header = imhead(imagename+'.psf.tt0')
-              beam   = header['perplanebeams']['beams']['*0']['*0']
-              beamstats = np.squeeze(np.array([ beam['major']['value'], beam['minor']['value'], beam['positionangle']['value'] ]))
-              spwstats[spw]['beam'] = beamstats
+                header = imhead(imagename+'.psf.tt0')
+                beam   = header['perplanebeams']['beams']['*0']['*0']
+                beamstats = np.squeeze(np.array([ beam['major']['value'], beam['minor']['value'], beam['positionangle']['value'] ]))
+                spwstats[spw]['beam'] = beamstats
 
         ####################################################
         # %% Run tclean [test_j1302_mosaic_cube] end       @
@@ -632,6 +700,12 @@ class test_j1302(test_vlass_base):
         ###########################################################
         # not part of the jupyter scripts
 
+        # save results for future analysis
+        np.save(tstobj.id()+'.fluxdens_alpha.npy', curr_stats)
+        np.save(tstobj.id()+'.freqs.npy', freqs)
+        np.save(tstobj.id()+'.fluxes.npy', fluxes)
+        np.save(tstobj.id()+'.spwstats.npy', spwstats)
+
         # (f) Runtimes not significantly different relative to previous runs
         # don't test this in jupyter notebooks - runtimes differ too much between machines
         success, report = tstobj.check_runtime(starttime, 7167, success, report)
@@ -658,6 +732,7 @@ class test_j1302(test_vlass_base):
         img0 = 'VLASS1.2.ql.T08t20.J1302.10.2048.v1.I.iter0'
         img1 = 'VLASS1.2.ql.T08t20.J1302.10.2048.v1.I.iter1'
         tstobj.prepData()
+        imsize = 7290
 
         #########################################
         # %% Set local vars [test_j1302_ql] end @
@@ -665,6 +740,11 @@ class test_j1302(test_vlass_base):
 
         # not part of the jupyter scripts
         starttime = datetime.now()
+        if quick_test:
+            if quick_imsize == '1':
+                imsize = 1822
+            if quick_imsize == '2':
+                imsize = 3645
 
         # .......................................
         # %% Run tclean [test_j1302_ql] start   @
@@ -673,7 +753,7 @@ class test_j1302(test_vlass_base):
         def run_tclean(vis=tstobj.vis, intent='OBSERVE_TARGET#UNSPECIFIED', datacolumn='data',
                        imagename=None, niter=None, restoration=None, compare_tclean_pars=None, nsigma=0.0,
                        phasecenter=tstobj.phasecenter, reffreq='3.0GHz', deconvolver='mtmfs',
-                       cell='1.0arcsec', imsize=[7290,7290], gridder='mosaic', cycleniter=-1,
+                       cell='1.0arcsec', imsize=imsize, gridder='mosaic', cycleniter=-1,
                        cyclefactor=1.0, restoringbeam='common', perchanweightdensity=False,
                        mosweight=False, calcres=True, calcpsf=True, scales=[0],
                        weighting='briggs', robust=1.0):
@@ -690,6 +770,11 @@ class test_j1302(test_vlass_base):
 
         ###########################################
         # %% Run tclean [test_j1302_ql] end       @
+
+        # not part of the jupyter scripts
+        if os.getenv("USE_CACHED_TCLEAN_VALS") == "true":
+            os.system("rm -rf *.pbcor.tt0 *.subim")
+
         # %% Prepare Images [test_j1302_ql] start @
         ###########################################
 
@@ -707,9 +792,11 @@ class test_j1302(test_vlass_base):
         tstobj.check_img_exists(img1+'.image.pbcor.tt0.rms')
 
         # hif_makecutoutimages(pipelinemode="automatic")
+        blc = imsize / 7290 * 1785
+        urc = imsize / 7290 * 5506
         for ext in ['.image.tt0', '.residual.tt0', '.image.pbcor.tt0', '.image.pbcor.tt0.rms', '.psf.tt0', '.image.residual.pbcor.tt0', '.pb.tt0']:
             imhead(imagename=img1+ext)
-            imsubimage(imagename=img1+ext, outfile=img1+ext+'.subim', box='1785.0,1785.0,5506.0,5506.0')
+            imsubimage(imagename=img1+ext, outfile=img1+ext+'.subim', box=f"{blc},{blc},{urc},{urc}")
             tstobj.check_img_exists(img1+ext+'.subim')
 
         ####################################################
@@ -721,7 +808,8 @@ class test_j1302(test_vlass_base):
         success0, report0 = tstobj.get_imgs_exist_results()
 
         # (a) tt0 vs 6.1.3, on-axis
-        imstat_vals       = imstat(imagename=img1+'.image.pbcor.tt0.subim',box='1860,1860,1860,1860')
+        halfsize          = imsize / 7290 * 1860
+        imstat_vals       = imstat(imagename=img1+'.image.pbcor.tt0.subim',box=f"{halfsize},{halfsize},{halfsize},{halfsize}")
         curr_stats        = np.squeeze(np.array([imstat_vals['max']]))
         onaxis_stats      = np.array([           0.3337])
         casa613_stats     = np.array([           0.320879])
@@ -749,6 +837,10 @@ class test_j1302(test_vlass_base):
         # %% Compare Expected Values [test_j1302_ql] end @
         ##################################################
         # not part of the jupyter scripts
+
+        # save results for future analysis
+        np.save(tstobj.id()+'.sourceflux.npy', curr_stats)
+        np.save(tstobj.id()+'.beamstats.npy', beamstats_curr)
 
         # (f) Runtimes not significantly different relative to previous runs
         # don't test this in jupyter notebooks - runtimes differ too much between machines
@@ -789,6 +881,8 @@ class test_j1927(test_vlass_base):
         tstobj.data_path_dir  = 'J1927/J1927-stakeholdertest-mosaic-data'
         img0 = 'J1927_iter2'
         tstobj.prepData("secondmask.mask", "QLcatmask.mask")
+        imsize = 4000
+        spw = ''
 
         #####################################################
         # %% Set local vars [test_j1927_mosaic_noncube] end @
@@ -796,6 +890,15 @@ class test_j1927(test_vlass_base):
 
         # not part of the jupyter scripts
         starttime = datetime.now()
+        if quick_test:
+            if quick_imsize == '1':
+                imsize = 1000
+            if quick_imsize == '2':
+                imsize = 2000
+            if quick_spwsel == '1':
+                spw = "*:0~3"
+            tstobj.resize_mask('QLcatmask.mask', 'QLcatmask.mask', [imsize,imsize])
+            tstobj.resize_mask('secondmask.mask', 'secondmask.mask', [imsize,imsize])
 
         # ....................................................
         # %% Prepare masks [test_j1927_mosaic_noncube] start @
@@ -814,11 +917,11 @@ class test_j1927(test_vlass_base):
                        niter=None, compare_tclean_pars=None, datacolumn=None,
                        imagename=img0, phasecenter=tstobj.phasecenter, reffreq='3.0GHz',
                        mask='', savemodel='none', usemask='user', pbmask=0.0,
-                       deconvolver='mtmfs', cell='0.6arcsec', imsize=4000, gridder='mosaic',
-                       uvtaper=[''], restoringbeam=[], mosweight=False, rotatepastep=5.0,
-                       smallscalebias=0.4, pblimit=0.1, scales=[0], weighting='briggs',
-                       robust=1.0, nsigma=2.0, cycleniter=500, cyclefactor=3.0,
-                       interactive=0, calcres=False, calcpsf=False):
+                       deconvolver='mtmfs', cell='0.6arcsec', imsize=imsize, spw=spw,
+                       gridder='mosaic', uvtaper=[''], restoringbeam=[], mosweight=False,
+                       rotatepastep=5.0, smallscalebias=0.4, pblimit=0.1, scales=[0],
+                       weighting='briggs', robust=1.0, nsigma=2.0, cycleniter=500,
+                       cyclefactor=3.0, interactive=0, calcres=False, calcpsf=False):
             params = locals()
             params = {k:params[k] for k in filter(lambda x: x not in ['tstobj'], params.keys())}
             tstobj.run_tclean(**params)
@@ -855,9 +958,11 @@ class test_j1927(test_vlass_base):
         # (l) Ensure intermediate products exist, pbcor images, RMS image (made by imdev), and cutouts (.subim) from imsubimage
         # N/A for this test
 
-        tt0stats   = imstat(imagename=img0+'.image.tt0', box='2000,2000,2000,2000')
-        tt1stats   = imstat(imagename=img0+'.image.tt1', box='2000,2000,2000,2000')
-        alphastats = imstat(imagename=img0+'.alpha',     box='2000,2000,2000,2000')
+        halfsize          = imsize / 4000 * 2000
+        box               = f"{halfsize},{halfsize},{halfsize},{halfsize}"
+        tt0stats   = imstat(imagename=img0+'.image.tt0', box=box)
+        tt1stats   = imstat(imagename=img0+'.image.tt1', box=box)
+        alphastats = imstat(imagename=img0+'.alpha',     box=box)
         curr_stats    = np.squeeze(np.array([ tt0stats['max'], tt1stats['max'], alphastats['max']]))
         onaxis_stats  = np.array([            0.9509,          0.3601,          0.3796])
         casa613_stats = np.array([            0.8887,          0.4148,          0.4668])
@@ -891,6 +996,10 @@ class test_j1927(test_vlass_base):
         # %% Compare Expected Values [test_j1927_mosaic_noncube] end @
         ##############################################################
         # not part of the jupyter scripts
+
+        # save results for future analysis
+        np.save(tstobj.id()+'.tt0tt1alpha.npy', curr_stats)
+        np.save(tstobj.id()+'.beamstats.npy', beamstats_curr)
 
         # (f) Runtimes not significantly different relative to previous runs
         # don't test this in jupyter notebooks - runtimes differ too much between machines
@@ -926,6 +1035,8 @@ class test_j1927(test_vlass_base):
         tstobj.prepData("QLcatmask.mask", "combined.mask")
         # rundir = "/users/bbean/dev/CAS-12427/src/casalith/build-casalith/work/linux/test_vlass_j1927_cube_unittest"
         # os.system(f"mv {rundir}/run_results/VLASS* {rundir}/nosedir/test_vlass_1v2/")
+        imsize = 4000
+        spw_chans = ''
 
         # reference frequence to use per spectral window (spw)
         refFreqDict  = {
@@ -953,6 +1064,15 @@ class test_j1927(test_vlass_base):
 
         # not part of the jupyter scripts
         starttime = datetime.now()
+        if quick_test:
+            if quick_imsize == '1':
+                imsize = 1000
+            if quick_imsize == '2':
+                imsize = 2000
+            if quick_spwsel == '1':
+                spw_chans = ":0~3"
+            tstobj.resize_mask("QLcatmask.mask", "QLcatmask.mask", [imsize,imsize])
+            tstobj.resize_mask("combined.mask", "combined.mask", [imsize,imsize])
 
         # .......................................
         # %% Run tclean [test_j1927_mosaic_cube] start   @
@@ -961,9 +1081,9 @@ class test_j1927(test_vlass_base):
         def iname(image_iter, spw, stokes): # imagename=imagename_base+image_iter+'_'+spw.replace('~','-')+'_'+stokes
             return 'J1927_'+image_iter+'_'+spw.replace('~','-')+'_'+stokes
 
-        def run_tclean(vis=tstobj.vis, uvrange='<12km', imsize=4000, intent='OBSERVE_TARGET#UNSPECIFIED',
-                       imagename=None, niter=None, compare_tclean_pars=None,
-                       cell='0.6arcsec', datacolumn='data', phasecenter=tstobj.phasecenter, spw='',
+        def run_tclean(vis=tstobj.vis, uvrange='<12km', imsize=imsize, intent='OBSERVE_TARGET#UNSPECIFIED',
+                       imagename=None, niter=None, compare_tclean_pars=None, spw=None,
+                       cell='0.6arcsec', datacolumn='data', phasecenter=tstobj.phasecenter,
                        stokes='I', mask='', usemask='user', pbmask=0.0, reffreq='3.0GHz',
                        deconvolver='mtmfs', gridder='mosaic', restoringbeam=[], mosweight=False,
                        rotatepastep=5.0, pblimit=0.1, scales=[0], nterms=1, weighting='briggs',
@@ -1001,38 +1121,41 @@ class test_j1927(test_vlass_base):
         }
 
         for spw in spws:
-           for stokes in stokesParams:
-              # initialize iter2, no cleaning
-              image_iter='iter2'
-              imagename = iname(image_iter, spw, stokes)
-              run_tclean( imagename=imagename, datacolumn='corrected', niter=0, spw=spw,
-                          stokes=stokes, reffreq=refFreqDict[spw], compare_tclean_pars=script_pars_vals_0[spw][stokes] )
+            spw_str = f"{spw}{spw_chans}"
+            for stokes in stokesParams:
+                # initialize iter2, no cleaning
+                image_iter='iter2'
+                imagename = iname(image_iter, spw, stokes)
+                run_tclean( imagename=imagename, datacolumn='corrected', niter=0, spw=spw_str,
+                            stokes=stokes, reffreq=refFreqDict[spw], compare_tclean_pars=script_pars_vals_0[spw][stokes] )
 
-              # # resume iter2 with QL mask
-              run_tclean( imagename=imagename, datacolumn='corrected', scales=[0,5,12], nsigma=3.0, niter=20000, cycleniter=500,   
-                          mask="QLcatmask.mask", calcres=False, calcpsf=False, spw=spw,
-                          stokes=stokes, reffreq=refFreqDict[spw], compare_tclean_pars=script_pars_vals_1[spw][stokes] )
+                # # resume iter2 with QL mask
+                run_tclean( imagename=imagename, datacolumn='corrected', scales=[0,5,12], nsigma=3.0, niter=20000, cycleniter=500,   
+                            mask="QLcatmask.mask", calcres=False, calcpsf=False, spw=spw_str,
+                            stokes=stokes, reffreq=refFreqDict[spw], compare_tclean_pars=script_pars_vals_1[spw][stokes] )
 
-              # resume iter2 with combined mask
-              os.system('rm -rf *.workdirectory')
-              os.system('rm -rf *iter2*.mask')
-              run_tclean( imagename=imagename, datacolumn='corrected', scales=[0,5,12], nsigma=3.0, niter=20000, cycleniter=500,
-                          mask="combined.mask", calcres=False, calcpsf=False, spw=spw,
-                          stokes=stokes, reffreq=refFreqDict[spw], compare_tclean_pars=script_pars_vals_2[spw][stokes])
+                # resume iter2 with combined mask
+                os.system('rm -rf *.workdirectory')
+                os.system('rm -rf *iter2*.mask')
+                run_tclean( imagename=imagename, datacolumn='corrected', scales=[0,5,12], nsigma=3.0, niter=20000, cycleniter=500,
+                            mask="combined.mask", calcres=False, calcpsf=False, spw=spw_str,
+                            stokes=stokes, reffreq=refFreqDict[spw], compare_tclean_pars=script_pars_vals_2[spw][stokes])
 
-              # os.system('rm -rf iter2*.mask')
-              run_tclean( imagename=imagename, datacolumn='corrected', scales=[0,5,12], nsigma=4.5, niter=20000, cycleniter=100,
-                          mask="", calcres=False, calcpsf=False, usemask='pb', pbmask=0.4, spw=spw,
-                          stokes=stokes, reffreq=refFreqDict[spw], compare_tclean_pars=script_pars_vals_3[spw][stokes] )
+                # os.system('rm -rf iter2*.mask')
+                run_tclean( imagename=imagename, datacolumn='corrected', scales=[0,5,12], nsigma=4.5, niter=20000, cycleniter=100,
+                            mask="", calcres=False, calcpsf=False, usemask='pb', pbmask=0.4, spw=spw_str,
+                            stokes=stokes, reffreq=refFreqDict[spw], compare_tclean_pars=script_pars_vals_3[spw][stokes] )
 
-              tt0statsI=imstat(imagename=imagename+'.image.tt0',box='2000,2000,2000,2000',stokes='I')
-              tt0statsQ=imstat(imagename=imagename+'.image.tt0',box='2000,2000,2000,2000',stokes='Q')
-              tt0statsU=imstat(imagename=imagename+'.image.tt0',box='2000,2000,2000,2000',stokes='U')
-              tt0statsV=imstat(imagename=imagename+'.image.tt0',box='2000,2000,2000,2000',stokes='V')
-              spwstats[spw]['IQUV']=np.squeeze(np.array([tt0statsI['max'],tt0statsQ['max'],tt0statsU['max'],tt0statsV['max']]))
-              header=imhead(imagename+'.psf.tt0')['perplanebeams']['beams']['*0']['*0']
-              beamstats=np.squeeze(np.array([header['major']['value'],header['minor']['value'],header['positionangle']['value']]))
-              spwstats[spw]['beam']=beamstats
+                halfsize = imsize / 4000 * 2000
+                box      = f"{halfsize},{halfsize},{halfsize},{halfsize}"
+                tt0statsI=imstat(imagename=imagename+'.image.tt0',box=box,stokes='I')
+                tt0statsQ=imstat(imagename=imagename+'.image.tt0',box=box,stokes='Q')
+                tt0statsU=imstat(imagename=imagename+'.image.tt0',box=box,stokes='U')
+                tt0statsV=imstat(imagename=imagename+'.image.tt0',box=box,stokes='V')
+                spwstats[spw]['IQUV']=np.squeeze(np.array([tt0statsI['max'],tt0statsQ['max'],tt0statsU['max'],tt0statsV['max']]))
+                header=imhead(imagename+'.psf.tt0')['perplanebeams']['beams']['*0']['*0']
+                beamstats=np.squeeze(np.array([header['major']['value'],header['minor']['value'],header['positionangle']['value']]))
+                spwstats[spw]['beam']=beamstats
 
         ####################################################
         # %% Run tclean [test_j1927_mosaic_cube] end       @
@@ -1072,7 +1195,7 @@ class test_j1927(test_vlass_base):
         alpha = popt[0]
         f_nu0 = 10**popt[1]
         curr_stats        = np.squeeze(np.array([f_nu0,   alpha])) # [flux density, alpha]
-        onaxis_stats      = np.array([           0.3337, -0.0476])
+        onaxis_stats      = np.array([           0.9509,  0.3601])
         casa613_stats     = np.array([           0.88879, 0.4127])
         success0, report0 = tstobj.check_fracdiff(curr_stats[0], onaxis_stats[0],  valname="Frac Diff F_nu vs. on-axis")
         success1, report1 = tstobj.check_fracdiff(curr_stats[0], casa613_stats[0], valname="Frac Diff F_nu vs. 6.1.3 image")
@@ -1114,6 +1237,12 @@ class test_j1927(test_vlass_base):
         ###########################################################
         # not part of the jupyter scripts
 
+        # save results for future analysis
+        np.save(tstobj.id()+'.fluxdens_alpha.npy', curr_stats)
+        np.save(tstobj.id()+'.freqs.npy', freqs)
+        np.save(tstobj.id()+'.fluxes.npy', fluxes)
+        np.save(tstobj.id()+'.spwstats.npy', spwstats)
+
         # (f) Runtimes not significantly different relative to previous runs
         # don't test this in jupyter notebooks - runtimes differ too much between machines
         success, report = tstobj.check_runtime(starttime, 15329, success, report)
@@ -1142,6 +1271,7 @@ class test_j1927(test_vlass_base):
         tstobj.prepData()
         # rundir = "/users/bbean/dev/CAS-12427/src/casalith/build-casalith/work/linux/test_vlass_j1927_QL_unittest"
         # os.system(f"mv {rundir}/run_results/VLASS* {rundir}/nosedir/test_vlass_1v2/")
+        imsize = 7290
 
         #########################################
         # %% Set local vars [test_j1927_ql] end @
@@ -1149,6 +1279,11 @@ class test_j1927(test_vlass_base):
 
         # not part of the jupyter scripts
         starttime = datetime.now()
+        if quick_test:
+            if quick_imsize == '1':
+                imsize = 1822
+            if quick_imsize == '2':
+                imsize = 3645
 
         # .......................................
         # %% Run tclean [test_j1927_ql] start   @
@@ -1157,7 +1292,7 @@ class test_j1927(test_vlass_base):
         def run_tclean(vis=tstobj.vis, intent='OBSERVE_TARGET#UNSPECIFIED', datacolumn='data',
                        imagename=None, niter=None, restoration=None, compare_tclean_pars=None,
                        phasecenter=tstobj.phasecenter, reffreq='3.0GHz', deconvolver='mtmfs', nsigma=0.0, cycleniter=-1, cyclefactor=1.0,
-                       cell='1.0arcsec', imsize=7290, gridder='mosaic', restoringbeam='common',
+                       cell='1.0arcsec', imsize=imsize, gridder='mosaic', restoringbeam='common',
                        perchanweightdensity=False, mosweight=False, scales=[0], calcres=True, calcpsf=True,
                        weighting='briggs', robust=1.0, interactive=0):
             params = locals()
@@ -1190,9 +1325,11 @@ class test_j1927(test_vlass_base):
         tstobj.check_img_exists(img1+'.image.pbcor.tt0.rms')
 
         # hif_makecutoutimages(pipelinemode="automatic")
+        blc = imsize / 7290 * 1785
+        urc = imsize / 7290 * 5506
         for ext in ['.image.tt0', '.residual.tt0', '.image.pbcor.tt0', '.image.pbcor.tt0.rms', '.psf.tt0', '.image.residual.pbcor.tt0', '.pb.tt0']:
             imhead(imagename=img1+ext)
-            imsubimage(imagename=img1+ext, outfile=img1+ext+'.subim', box='1785.0,1785.0,5506.0,5506.0')
+            imsubimage(imagename=img1+ext, outfile=img1+ext+'.subim', box=f"{blc},{blc},{urc},{urc}")
             tstobj.check_img_exists(img1+ext+'.subim')
 
         ####################################################
@@ -1204,7 +1341,9 @@ class test_j1927(test_vlass_base):
         success0, report0 = tstobj.get_imgs_exist_results()
 
         # (a) tt0 vs 6.1.3, on-axis
-        imstat_vals       = imstat(imagename=img1+'.image.pbcor.tt0.subim', box='1860,1860,1860,1860')
+        halfsize          = imsize / 7290 * 1860
+        box               = f"{halfsize},{halfsize},{halfsize},{halfsize}"
+        imstat_vals       = imstat(imagename=img1+'.image.pbcor.tt0.subim', box=box)
         curr_stats        = np.squeeze(np.array([imstat_vals['max']]))
         onaxis_stats      = np.array([           0.9509])
         casa613_stats     = np.array([           0.90649462])
@@ -1232,6 +1371,10 @@ class test_j1927(test_vlass_base):
         # %% Compare Expected Values [test_j1927_ql] end @
         ##################################################
         # not part of the jupyter scripts
+
+        # save results for future analysis
+        np.save(tstobj.id()+'.sourceflux.npy', curr_stats)
+        np.save(tstobj.id()+'.beamstats.npy', beamstats_curr)
 
         # (f) Runtimes not significantly different relative to previous runs
         # don't test this in jupyter notebooks - runtimes differ too much between machines
