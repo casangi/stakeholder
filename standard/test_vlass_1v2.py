@@ -118,14 +118,16 @@ if ('FULL_TEST' in os.environ):
     quick_test = False
 else:
     casalog.post("FULL_TEST env variable not found\nRunning tests with reduced image sizes", "INFO")
-quick_imsize = '1' if ('QUICK_IMSIZE' not in os.environ) else os.environ['QUICK_IMSIZE']
-quick_spwsel = '0' if ('QUICK_SPWSEL' not in os.environ) else os.environ['QUICK_SPWSEL']
-quick_spws   = '0' if ('SPW_SEL' not in os.environ)      else os.environ['SPW_SEL']
-cfcache_sel  = "false" if ('CFCACHE' not in os.environ)  else os.environ['CFCACHE']
-casalog.post(f"QUICK_IMSIZE: {quick_imsize}", "SEVERE")
-casalog.post(f"QUICK_SPWSEL: {quick_spwsel}", "SEVERE")
-casalog.post(f"QUICK_SPWS:   {quick_spws}", "SEVERE")
-casalog.post(f"CFCACHE:      {cfcache_sel}", "SEVERE")
+quick_imsize  = '1' if ('QUICK_IMSIZE' not in os.environ) else os.environ['QUICK_IMSIZE']
+quick_spwsel  = '0' if ('QUICK_SPWSEL' not in os.environ) else os.environ['QUICK_SPWSEL']
+quick_spws    = '0' if ('SPW_SEL' not in os.environ)      else os.environ['SPW_SEL']
+cfcache_sel   = "false" if ('CFCACHE' not in os.environ)  else os.environ['CFCACHE']
+use_cached_tc = True if (os.getenv("USE_CACHED_TCLEAN_VALS") == "true") else False
+casalog.post(f"QUICK_IMSIZE:  {quick_imsize}", "SEVERE")
+casalog.post(f"QUICK_SPWSEL:  {quick_spwsel}", "SEVERE")
+casalog.post(f"QUICK_SPWS:    {quick_spws}", "SEVERE")
+casalog.post(f"CFCACHE:       {cfcache_sel}", "SEVERE")
+casalog.post(f"USE_CACHED_TC: {use_cached_tc}", "SEVERE")
 
 ##############################################
 ##############################################
@@ -187,8 +189,9 @@ class test_j1302(test_vlass_base):
         ######################################################
 
         # combine first and 2nd order masks
-        immath(imagename=['secondmask.mask','QLcatmask.mask'],expr='IM0+IM1',outfile='sum_of_masks.mask') # comment out to use cached tclean vals
-        tstobj.im.mask(image='sum_of_masks.mask',mask='combined.mask',threshold=0.5) # comment out to use cached tclean vals
+        if not use_cached_tc:
+            immath(imagename=['secondmask.mask','QLcatmask.mask'],expr='IM0+IM1',outfile='sum_of_masks.mask')
+            tstobj.im.mask(image='sum_of_masks.mask',mask='combined.mask',threshold=0.5)
 
         ####################################################
         # %% Prepare masks [test_j1302_mosaic_noncube] end @
@@ -352,8 +355,9 @@ class test_j1302(test_vlass_base):
         ######################################################
 
         # combine first and 2nd order masks
-        immath(imagename=['secondmask.mask','QLcatmask.mask'],expr='IM0+IM1',outfile='sum_of_masks.mask') # comment out to use cached tclean vals
-        tstobj.im.mask(image='sum_of_masks.mask',mask='combined.mask',threshold=0.5) # comment out to use cached tclean vals
+        if not use_cached_tc:
+            immath(imagename=['secondmask.mask','QLcatmask.mask'],expr='IM0+IM1',outfile='sum_of_masks.mask')
+            tstobj.im.mask(image='sum_of_masks.mask',mask='combined.mask',threshold=0.5)
 
         ####################################################
         # %% Prepare masks [test_j1302_mosaic_noncube] end @
@@ -814,15 +818,16 @@ class test_j1302(test_vlass_base):
         script_pars_vals_0 = tstobj.get_params_as_dict(vis='J1302-12fields.ms', selectdata=True, field='', spw='', timerange='', uvrange='', antenna='', scan='', observation='', intent='OBSERVE_TARGET#UNSPECIFIED', datacolumn='data', imagename='VLASS1.2.ql.T08t20.J1302.10.2048.v1.I.iter0', imsize=[7290, 7290], cell='1.0arcsec', phasecenter='13:03:13.874 -10.51.16.73', stokes='I', projection='SIN', startmodel='', specmode='mfs', reffreq='3.0GHz', nchan=-1, start='', width='', outframe='LSRK', veltype='radio', restfreq=[], interpolation='linear', perchanweightdensity=False, gridder='mosaic', facets=1, psfphasecenter='', chanchunks=1, wprojplanes=1, vptable='', mosweight=False, aterm=True, psterm=False, wbawp=True, conjbeams=False, cfcache='', usepointing=False, computepastep=360.0, rotatepastep=360.0, pointingoffsetsigdev=[], pblimit=0.2, normtype='flatnoise', deconvolver='mtmfs', scales=[0], nterms=2, smallscalebias=0.0, restoration=False, restoringbeam='common', pbcor=False, outlierfile='', weighting='briggs', robust=1.0, noise='1.0Jy', npixels=0, uvtaper=[], niter=0, gain=0.1, threshold='0.0mJy', nsigma=0.0, cycleniter=-1, cyclefactor=1.0, minpsffraction=0.05, maxpsffraction=0.8, interactive=0, usemask='user', mask='', pbmask=0.0, sidelobethreshold=3.0, noisethreshold=5.0, lownoisethreshold=1.5, negativethreshold=0.0, smoothfactor=1.0, minbeamfrac=0.3, cutthreshold=0.01, growiterations=75, dogrowprune=True, minpercentchange=-1.0, verbose=False, fastnoise=True, restart=True, savemodel='none', calcres=True, calcpsf=True, parallel=False)
         script_pars_vals_1 = tstobj.get_params_as_dict(vis='J1302-12fields.ms', selectdata=True, field='', spw='', timerange='', uvrange='', antenna='', scan='', observation='', intent='OBSERVE_TARGET#UNSPECIFIED', datacolumn='data', imagename='VLASS1.2.ql.T08t20.J1302.10.2048.v1.I.iter1', imsize=[7290, 7290], cell='1.0arcsec', phasecenter='13:03:13.874 -10.51.16.73', stokes='I', projection='SIN', startmodel='', specmode='mfs', reffreq='3.0GHz', nchan=-1, start='', width='', outframe='LSRK', veltype='radio', restfreq=[], interpolation='linear', perchanweightdensity=False, gridder='mosaic', facets=1, psfphasecenter='', chanchunks=1, wprojplanes=1, vptable='', mosweight=False, aterm=True, psterm=False, wbawp=True, conjbeams=False, cfcache='', usepointing=False, computepastep=360.0, rotatepastep=360.0, pointingoffsetsigdev=[], pblimit=0.2, normtype='flatnoise', deconvolver='mtmfs', scales=[0], nterms=2, smallscalebias=0.0, restoration=True, restoringbeam='common', pbcor=False, outlierfile='', weighting='briggs', robust=1.0, noise='1.0Jy', npixels=0, uvtaper=[], niter=20000, gain=0.1, threshold=0.0, nsigma=4.5, cycleniter=500, cyclefactor=2.0, minpsffraction=0.05, maxpsffraction=0.8, interactive=0, usemask='user', mask='', pbmask=0.0, sidelobethreshold=3.0, noisethreshold=5.0, lownoisethreshold=1.5, negativethreshold=0.0, smoothfactor=1.0, minbeamfrac=0.3, cutthreshold=0.01, growiterations=75, dogrowprune=True, minpercentchange=-1.0, verbose=False, fastnoise=True, restart=True, savemodel='none', calcres=False, calcpsf=False, parallel=False)
         run_tclean(imagename=img0, niter=0,     restoration=False,                                                                           compare_tclean_pars=script_pars_vals_0)
-        for ext in ['.weight.tt2', '.weight.tt0', '.psf.tt0', '.residual.tt0', '.weight.tt1', '.sumwt.tt2', '.psf.tt1', '.residual.tt1', '.psf.tt2', '.sumwt.tt1', '.model.tt0', '.pb.tt0', '.model.tt1', '.sumwt.tt0']: # comment out to use cached tclean vals
-            shutil.copytree(src=img0+ext, dst=img1+ext) # comment out to use cached tclean vals
+        if not use_cached_tc:
+            for ext in ['.weight.tt2', '.weight.tt0', '.psf.tt0', '.residual.tt0', '.weight.tt1', '.sumwt.tt2', '.psf.tt1', '.residual.tt1', '.psf.tt2', '.sumwt.tt1', '.model.tt0', '.pb.tt0', '.model.tt1', '.sumwt.tt0']:
+                shutil.copytree(src=img0+ext, dst=img1+ext)
         run_tclean(imagename=img1, niter=20000, restoration=True, nsigma=4.5, cycleniter=500, cyclefactor=2.0, calcres=False, calcpsf=False, compare_tclean_pars=script_pars_vals_1)
 
         ###########################################
         # %% Run tclean [test_j1302_ql] end       @
 
         # not part of the jupyter scripts
-        if os.getenv("USE_CACHED_TCLEAN_VALS") == "true":
+        if use_cached_tc:
             os.system("rm -rf *.pbcor.tt0 *.subim")
 
         # %% Prepare Images [test_j1302_ql] start @
@@ -960,8 +965,9 @@ class test_j1927(test_vlass_base):
         ######################################################
 
         # combine first and 2nd order masks
-        immath(imagename=['secondmask.mask','QLcatmask.mask'],expr='IM0+IM1',outfile='sum_of_masks.mask') # comment out to use cached tclean vals
-        tstobj.im.mask(image='sum_of_masks.mask',mask='combined.mask',threshold=0.5) # comment out to use cached tclean vals
+        if not use_cached_tc:
+            immath(imagename=['secondmask.mask','QLcatmask.mask'],expr='IM0+IM1',outfile='sum_of_masks.mask')
+            tstobj.im.mask(image='sum_of_masks.mask',mask='combined.mask',threshold=0.5)
 
         ####################################################
         # %% Prepare masks [test_j1927_mosaic_noncube] end @
@@ -1373,15 +1379,16 @@ class test_j1927(test_vlass_base):
         script_pars_vals_0 = tstobj.get_params_as_dict(vis='J1927_12fields.ms', selectdata=True, field='', spw='', timerange='', uvrange='', antenna='', scan='', observation='', intent='OBSERVE_TARGET#UNSPECIFIED', datacolumn='data', imagename='VLASS1.2.ql.T26t15.J1927.10.2048.v1.I.iter0', imsize=[7290, 7290], cell='1.0arcsec', phasecenter='19:27:30.443 +61.17.32.898', stokes='I', projection='SIN', startmodel='', specmode='mfs', reffreq='3.0GHz', nchan=-1, start='', width='', outframe='LSRK', veltype='radio', restfreq=[], interpolation='linear', perchanweightdensity=False, gridder='mosaic', facets=1, psfphasecenter='', chanchunks=1, wprojplanes=1, vptable='', mosweight=False, aterm=True, psterm=False, wbawp=True, conjbeams=False, cfcache='', usepointing=False, computepastep=360.0, rotatepastep=360.0, pointingoffsetsigdev=[], pblimit=0.2, normtype='flatnoise', deconvolver='mtmfs', scales=[0], nterms=2, smallscalebias=0.0, restoration=False, restoringbeam='common', pbcor=False, outlierfile='', weighting='briggs', robust=1.0, noise='1.0Jy', npixels=0, uvtaper=[], niter=0, gain=0.1, threshold='0.0mJy', nsigma=0.0, cycleniter=-1, cyclefactor=1.0, minpsffraction=0.05, maxpsffraction=0.8, interactive=0, usemask='user', mask='', pbmask=0.0, sidelobethreshold=3.0, noisethreshold=5.0, lownoisethreshold=1.5, negativethreshold=0.0, smoothfactor=1.0, minbeamfrac=0.3, cutthreshold=0.01, growiterations=75, dogrowprune=True, minpercentchange=-1.0, verbose=False, fastnoise=True, restart=True, savemodel='none', calcres=True, calcpsf=True, parallel=False)
         script_pars_vals_1 = tstobj.get_params_as_dict(vis='J1927_12fields.ms', selectdata=True, field='', spw='', timerange='', uvrange='', antenna='', scan='', observation='', intent='OBSERVE_TARGET#UNSPECIFIED', datacolumn='data', imagename='VLASS1.2.ql.T26t15.J1927.10.2048.v1.I.iter1', imsize=[7290, 7290], cell='1.0arcsec', phasecenter='19:27:30.443 +61.17.32.898', stokes='I', projection='SIN', startmodel='', specmode='mfs', reffreq='3.0GHz', nchan=-1, start='', width='', outframe='LSRK', veltype='radio', restfreq=[], interpolation='linear', perchanweightdensity=False, gridder='mosaic', facets=1, psfphasecenter='', chanchunks=1, wprojplanes=1, vptable='', mosweight=False, aterm=True, psterm=False, wbawp=True, conjbeams=False, cfcache='', usepointing=False, computepastep=360.0, rotatepastep=360.0, pointingoffsetsigdev=[], pblimit=0.2, normtype='flatnoise', deconvolver='mtmfs', scales=[0], nterms=2, smallscalebias=0.0, restoration=True, restoringbeam='common', pbcor=False, outlierfile='', weighting='briggs', robust=1.0, noise='1.0Jy', npixels=0, uvtaper=[], niter=20000, gain=0.1, threshold=0.0, nsigma=4.5, cycleniter=500, cyclefactor=2.0, minpsffraction=0.05, maxpsffraction=0.8, interactive=0, usemask='user', mask='', pbmask=0.0, sidelobethreshold=3.0, noisethreshold=5.0, lownoisethreshold=1.5, negativethreshold=0.0, smoothfactor=1.0, minbeamfrac=0.3, cutthreshold=0.01, growiterations=75, dogrowprune=True, minpercentchange=-1.0, verbose=False, fastnoise=True, restart=True, savemodel='none', calcres=False, calcpsf=False, parallel=False)
         run_tclean(imagename=img0, niter=0,     restoration=False,                                                                           compare_tclean_pars=script_pars_vals_0)
-        for ext in ['.weight.tt2', '.weight.tt0', '.psf.tt0', '.residual.tt0', '.weight.tt1', '.sumwt.tt2', '.psf.tt1', '.residual.tt1', '.psf.tt2', '.sumwt.tt1', '.model.tt0', '.pb.tt0', '.model.tt1', '.sumwt.tt0']: # comment out to use cached tclean vals
-            shutil.copytree(src=img0+ext, dst=img1+ext) # comment out to use cached tclean vals
+        if not use_cached_tc:
+            for ext in ['.weight.tt2', '.weight.tt0', '.psf.tt0', '.residual.tt0', '.weight.tt1', '.sumwt.tt2', '.psf.tt1', '.residual.tt1', '.psf.tt2', '.sumwt.tt1', '.model.tt0', '.pb.tt0', '.model.tt1', '.sumwt.tt0']:
+                shutil.copytree(src=img0+ext, dst=img1+ext)
         run_tclean(imagename=img1, niter=20000, restoration=True, nsigma=4.5, cycleniter=500, cyclefactor=2.0, calcres=False, calcpsf=False, compare_tclean_pars=script_pars_vals_1)
 
         ###########################################
         # %% Run tclean [test_j1927_ql] end       @
 
         # not part of the jupyter scripts
-        if os.getenv("USE_CACHED_TCLEAN_VALS") == "true":
+        if use_cached_tc:
             os.system("rm -rf *.pbcor.tt0* *.subim")
 
         # %% Prepare Images [test_j1927_ql] start @
