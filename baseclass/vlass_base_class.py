@@ -26,9 +26,11 @@ class test_vlass_base(test_tclean_base):
         # TODO remove these hardcoded paths
         ben1 = "/users/bbean/dev/CAS-12427"
         ben2 = "/export/home/figs/bbean/dev/CAS-12427"
+        ben3 = "/lustre/bbean/dev/CAS-12427"
         ctsys.setpath(ctsys.getpath() + [
             ben1+"/data",
             ben2+"/data",
+            ben3+"/data",
         ])
 
     def tearDown(self):
@@ -114,7 +116,7 @@ class test_vlass_base(test_tclean_base):
                 val[i] = self.nparray_to_list(val[i])
         return val
 
-    def check_diff(self, actual, expected, diff, valname, desired_diff, max_diff):
+    def check_diff(self, actual, expected, diff, valname, desired_diff, max_diff, rms=None):
         """ Logs a warning if outside of desired bounds, returns False if outside maximum bounds """
 
         # only worry about comparing the maximum value
@@ -133,27 +135,82 @@ class test_vlass_base(test_tclean_base):
         correctval = f"< {max_diff}"
 
         # generate the report
+        rms_str = "" if (rms == None) else f", rms: {rms}"
         if (val > desired_diff):
-            casalog.post(f"Warning, {valname}: {diff} vs desired {desired_diff}, (actual: {actual}, expected: {expected})", "WARN")
-        report = "[ {} ] {} is {} ( {} : should be {})\n".format(testname, valname, str(diff), self.th.verdict(out), str(correctval) )
+            casalog.post(f"Warning, {valname}: {diff} vs desired {desired_diff}, (actual: {actual}, expected: {expected}{rms_str})", "WARN")
+        report = "[ {} ] {} is {} ( {} : should be {}{})\n".format(testname, valname, str(diff), self.th.verdict(out), rms_str, str(correctval) )
         report = report.rstrip() + f" (raw actual/expected values: {actual}/{expected})\n"
         return out, report
 
     def check_fracdiff(self, actual, expected, valname, desired_diff=0.05, max_diff=0.1):
+        fracdiff=abs(actual-expected)/abs(expected)
+        return self.check_diff(actual, expected, fracdiff, valname, desired_diff, max_diff)
+
+    def check_metrics_flux(self, measured, expected, valname, rms_or_std, desired_diff=0.05, max_diff=0.1, nsigma=2):
         """ Logs a warning if outside of desired bounds, returns False if outside required bounds
         
         5% desired, 10% required, as from https://drive.google.com/file/d/1zw6UeDEoXoxM05oFg3rir0hrCMEJMxkH/view and https://open-confluence.nrao.edu/display/VLASS/Updated+VLASS+survey+science+requirements+and+parameters
         """
-        fracdiff=abs(actual-expected)/abs(expected)
-        return self.check_diff(actual, expected, fracdiff, valname, desired_diff, max_diff)
+        std = rms_or_std
 
-    def check_absdiff(self, actual, expected, valname, desired_diff=0.1, max_diff=0.2):
+        #################################################
+        ###  [A] Tolerance on the metric of relative error : Based only on image noise levels
+        #################################################
+        ## Docs : https://casadocs.readthedocs.io/en/latest/notebooks/synthesis_imaging.html#Options-in-CASA-for-wideband-imaging --> Search for "Calculating Error in Spectral Index"
+        ## Eqn 39 of https://www.aanda.org/index.php?option=com_article&access=doi&doi=10.1051/0004-6361/201117104&Itemid=129#S29
+        calc = np.sign(expected) * ( np.abs(expected) + nsigma*std )
+        rel_error = np.abs(( calc - expected ))/ np.maximum(np.abs(expected),nsigma*std)
+
+        #################################################
+        ### [B] Empirical tolerances
+        #################################################
+        emp_error = max_diff ## 0.1 = 10% relative error
+
+        #################################################
+        ### Tolerance to use for the tests
+        #################################################
+        tol_flux = np.maximum(rel_error, emp_error)  
+
+        #################################################
+        ### Calculate the metrics for the input measured values
+        #################################################
+        rel_error_flux = np.abs( ( measured - expected) ) / np.maximum(np.abs(expected),nsigma*std)
+        
+        return self.check_diff(measured, expected, rel_error_flux, valname, desired_diff, tol_flux)
+
+    def check_metrics_alpha(self, a_meas, a_true, valname, rmss_or_stds, desired_diff=0.1, max_diff=0.2, nsigma=2):
         """ Logs a warning if outside of desired bounds, returns False if outside required bounds
         
         0.1 desired, 0.2 required, as from https://drive.google.com/file/d/1zw6UeDEoXoxM05oFg3rir0hrCMEJMxkH/view and https://open-confluence.nrao.edu/display/VLASS/Updated+VLASS+survey+science+requirements+and+parameters
         """
-        absdiff=abs(actual-expected)
-        return self.check_diff(actual, expected, absdiff, valname, desired_diff, max_diff)
+        if type(rmss_or_stds) != list:
+            rmss_or_stds = [rmss_or_stds, rmss_or_stds]
+        std0, std1 = rmss_or_stds[0], rmss_or_stds[1]
+
+        #################################################
+        ###  [A] Tolerance on the metric of relative error : Based only on image noise levels
+        #################################################
+        ## Docs : https://casadocs.readthedocs.io/en/latest/notebooks/synthesis_imaging.html#Options-in-CASA-for-wideband-imaging --> Search for "Calculating Error in Spectral Index"
+        ## Eqn 39 of https://www.aanda.org/index.php?option=com_article&access=doi&doi=10.1051/0004-6361/201117104&Itemid=129#S29
+        #       dIa =             Ia   *    sqrt( (    dI0  /  I0    )**2 + (    dI1  /  I1    )**2 )
+        a_error_std = np.abs(   a_true * np.sqrt( (nsigma*std0/a_true)**2 + (nsigma*std1/a_true)**2 )   )
+
+        #################################################
+        ### [B] Empirical tolerances
+        #################################################
+        emp_a = max_diff ## probably 0.2, absolute error in spectral index 
+
+        #################################################
+        ### Tolerance to use for the tests
+        #################################################
+        tol_a =np.max([a_error_std, emp_a])
+
+        #################################################
+        ### Calculate the metrics for the input measured values
+        #################################################
+        abs_error_a = np.abs( a_meas - a_true )
+        
+        return self.check_diff(a_meas, a_true, abs_error_a, valname, desired_diff, tol_a)
 
     def check_column_exists(self, colname):
         """ Verifies that the given column exists in the self.vis measurement set. """
@@ -249,7 +306,7 @@ class test_vlass_base(test_tclean_base):
                 raise RuntimeError(f"Error: trying to run tclean with nonexistant mask {wargs['mask']}")
         try:
             if os.getenv("USE_CACHED_TCLEAN_VALS") != "true":
-                tclean(**wargs)
+                return tclean(**wargs)
                 pass
         except:
             # self.print_tclean(**wargs)
@@ -282,7 +339,7 @@ class test_vlass_base(test_tclean_base):
         run_tclean_pars = {k:run_tclean_pars[k] for k in filter(lambda x: x not in ['self', 'compare_tclean_pars', 'psfcutoff'] and '__' not in x, run_tclean_pars.keys())}
         if (compare_tclean_pars != None):
             self.print_task_diff_params('run_tclean', act_pars=run_tclean_pars, exp_pars=compare_tclean_pars)
-        self._run_tclean(**run_tclean_pars)
+        return self._run_tclean(**run_tclean_pars)
 
     def resize_mask(self, maskname, outputmaskname, shape=[2000,2000,1,1]):
         """Resizes a .image mask from its current shape to the given shape"""
