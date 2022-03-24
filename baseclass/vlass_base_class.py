@@ -130,7 +130,7 @@ class test_vlass_base(test_tclean_base):
         diff = self.nparray_to_list(diff)
 
         # get some values
-        out = (val <= max_diff)
+        out = np.all(val <= max_diff)
         testname = self._testMethodName
         correctval = f"< {max_diff}"
 
@@ -138,7 +138,7 @@ class test_vlass_base(test_tclean_base):
         rms_str = "" if (rms == None) else f", rms: {rms}"
         if (val > desired_diff):
             casalog.post(f"Warning, {valname}: {diff} vs desired {desired_diff}, (actual: {actual}, expected: {expected}{rms_str})", "WARN")
-        report = "[ {} ] {} is {} ( {} : should be {}{})\n".format(testname, valname, str(diff), self.th.verdict(out), rms_str, str(correctval) )
+        report = "[ {} ] {} is {} ( {} : should be {}{})\n".format(testname, valname, str(diff), self.th.verdict(out), str(correctval), rms_str )
         report = report.rstrip() + f" (raw actual/expected values: {actual}/{expected})\n"
         return out, report
 
@@ -210,6 +210,14 @@ class test_vlass_base(test_tclean_base):
         #################################################
         abs_error_a = np.abs( a_meas - a_true )
         
+        return self.check_diff(a_meas, a_true, abs_error_a, valname, desired_diff, tol_a)
+
+    def check_metrics_alpha_fitted(self, a_meas, a_true, valname, pcov, desired_diff=0.1, max_diff=0.2, nsigma=2):
+        # for checking alpha, accounting for errors in fitting across several spws with scipy.optimize.curve_fit
+        std_a = nsigma * np.sqrt(np.diag(pcov)[0])
+        emp_a = max_diff ## probably 0.2, absolute error in spectral index 
+        tol_a = np.max([std_a, emp_a])
+        abs_error_a = np.abs( a_meas - a_true )
         return self.check_diff(a_meas, a_true, abs_error_a, valname, desired_diff, tol_a)
 
     def check_column_exists(self, colname):

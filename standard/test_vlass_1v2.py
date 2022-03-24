@@ -665,7 +665,6 @@ class test_j1302(test_vlass_base):
            return a*(x-np.log10(nu_0))+b
 
         popt, pcov = curve_fit(func, logfreqs, logfluxes)
-        perr = np.sqrt(np.diag(pcov))
 
         #############################################################
         # %% Math stuff [test_j1302_mosaic_cube] end                @
@@ -684,8 +683,8 @@ class test_j1302(test_vlass_base):
         casa613_stats     = np.array([           0.3127, 0.04134])
         success0, report0 = tstobj.check_metrics_flux(curr_stats[0], onaxis_stats[0],  valname="Frac Diff F_nu vs. on-axis", rms_or_std=np.mean(list(rms.values())))
         success1, report1 = tstobj.check_metrics_flux(curr_stats[0], casa613_stats[0], valname="Frac Diff F_nu vs. 6.1.3 image", rms_or_std=np.mean(list(rms.values())))
-        success2, report2 = tstobj.check_metrics_alpha(curr_stats[1], onaxis_stats[1],  valname="Abs Diff alpha vs. on-axis", rmss_or_stds=max(rms.values()))
-        success3, report3 = tstobj.check_metrics_alpha(curr_stats[1], casa613_stats[1], valname="Abs Diff alpha vs. 6.1.3 image", rmss_or_stds=max(rms.values()))
+        success2, report2 = tstobj.check_metrics_alpha_fitted(curr_stats[1], onaxis_stats[1],  valname="Abs Diff alpha vs. on-axis", pcov=pcov)
+        success3, report3 = tstobj.check_metrics_alpha_fitted(curr_stats[1], casa613_stats[1], valname="Abs Diff alpha vs. 6.1.3 image", pcov=pcov)
 
         spwstats_613={
           '2': { 'IQUV':    np.array([0.3024486,      -0.00169682,     -0.00040808,     -0.00172231]),
@@ -1251,7 +1250,6 @@ class test_j1927(test_vlass_base):
             return a*(x-np.log10(nu_0))+b
 
         popt, pcov = curve_fit(func, logfreqs, logfluxes)
-        perr = np.sqrt(np.diag(pcov))
 
         #############################################################
         # %% Math stuff [test_j1927_mosaic_cube] end                @
@@ -1270,8 +1268,8 @@ class test_j1927(test_vlass_base):
         casa613_stats     = np.array([           0.88879, 0.4127])
         success0, report0 = tstobj.check_metrics_flux(curr_stats[0], onaxis_stats[0],  valname="Frac Diff F_nu vs. on-axis", rms_or_std=np.mean(list(rms.values())))
         success1, report1 = tstobj.check_metrics_flux(curr_stats[0], casa613_stats[0], valname="Frac Diff F_nu vs. 6.1.3 image", rms_or_std=np.mean(list(rms.values())))
-        success2, report2 = tstobj.check_metrics_alpha(curr_stats[1], onaxis_stats[1],  valname="Abs Diff alpha vs. on-axis", rmss_or_stds=max(rms.values()))
-        success3, report3 = tstobj.check_metrics_alpha(curr_stats[1], casa613_stats[1], valname="Abs Diff alpha vs. 6.1.3 image", rmss_or_stds=max(rms.values()))
+        success2, report2 = tstobj.check_metrics_alpha_fitted(curr_stats[1], onaxis_stats[1],  valname="Abs Diff alpha vs. on-axis", pcov=pcov)
+        success3, report3 = tstobj.check_metrics_alpha_fitted(curr_stats[1], casa613_stats[1], valname="Abs Diff alpha vs. 6.1.3 image", pcov=pcov)
 
         spwstats_613= {
             '2': {'freq': 2.028,
