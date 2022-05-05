@@ -5,7 +5,7 @@ from datetime import datetime
 from collections import OrderedDict, Iterable
 import numpy as np
 
-from casatools import table, imager
+from casatools import ctsys, table, imager
 from casatasks import casalog, immath, tclean
 from casatasks.private.parallel.parallel_task_helper import ParallelTaskHelper
 from casatestutils.imagerhelpers import TestHelpers
@@ -19,11 +19,19 @@ class test_vlass_base(test_tclean_base):
         super().setUp()
         self.img = 'delete_me' # here so that test_tclean_base.delData() doesn't error out
         self.imgs = []
-        # self.data_path = "/users/bbean/dev/CAS-12427/data"
-        self.data_path = "/export/home/figs/bbean/dev/CAS-12427/data"
         self.th = TestHelpers()
         self.tb = table()
         self.im = imager()
+
+        # TODO remove these hardcoded paths
+        ben1 = "/users/bbean/dev/CAS-12427"
+        ben2 = "/export/home/figs/bbean/dev/CAS-12427"
+        ben3 = "/lustre/bbean/dev/CAS-12427"
+        ctsys.setpath(ctsys.getpath() + [
+            ben1+"/data",
+            ben2+"/data",
+            ben3+"/data",
+        ])
 
     def tearDown(self):
         super().tearDown()
@@ -45,14 +53,18 @@ class test_vlass_base(test_tclean_base):
         super().prepData(msname)
 
         if os.getenv("USE_CACHED_TCLEAN_VALS") != "true":
-            data_path_dir = self.data_path_dir
-            mssrc = os.path.join(self.data_path, data_path_dir, msname)
+            # clean run
+            data_path_dir = ctsys.resolve(self.data_path_dir)
+            mssrc = os.path.join(data_path_dir, msname)
+            casalog.post(f"{mssrc} => {msname}", "SEVERE")
             shutil.copytree(mssrc, msname)
 
             for copydir in copyargs:
-                copysrc = os.path.join(self.data_path, data_path_dir, copydir)
+                copysrc = os.path.join(data_path_dir, copydir)
+                casalog.post(f"{copysrc} => {copydir}", "SEVERE")
                 shutil.copytree(copysrc, copydir)
         else:
+            # continue running with partially computed results (eg, ran tclean last time, now check the values)
             from os.path import dirname, join
             import sys
             fromdir = join( dirname(dirname(os.getcwd())), "partial_results" )
@@ -118,7 +130,7 @@ class test_vlass_base(test_tclean_base):
         diff = self.nparray_to_list(diff)
 
         # get some values
-        out = (val <= max_diff)
+        out = np.all(val <= max_diff)
         testname = self._testMethodName
         correctval = f"< {max_diff}"
 
@@ -229,14 +241,17 @@ class test_vlass_base(test_tclean_base):
     #     casalog.post(f"Offending tclean call:\n{diff_pars_call}", "SEVERE")
 
     def _run_tclean(self, **wargs):
-        """ Tracks the "imagename" in self.imgs (for cleanup) and runs tclean. """
+        """ Tracks the "imagename" in self.imgs (for cleanup), checks for mask existance, and runs tclean. """
         if ('imagename' in wargs):
             img = wargs['imagename']
             if (img not in self.imgs):
                 self.imgs.append(img)
+        if ('mask' in wargs) and (wargs['mask'] != ''):
+            if not os.path.exists(wargs['mask']):
+                raise RuntimeError(f"Error: trying to run tclean with nonexistant mask {wargs['mask']}")
         try:
             if os.getenv("USE_CACHED_TCLEAN_VALS") != "true":
-                tclean(**wargs)
+                return tclean(**wargs)
                 pass
         except:
             # self.print_tclean(**wargs)
@@ -269,4 +284,45 @@ class test_vlass_base(test_tclean_base):
         run_tclean_pars = {k:run_tclean_pars[k] for k in filter(lambda x: x not in ['self', 'compare_tclean_pars', 'psfcutoff'] and '__' not in x, run_tclean_pars.keys())}
         if (compare_tclean_pars != None):
             self.print_task_diff_params('run_tclean', act_pars=run_tclean_pars, exp_pars=compare_tclean_pars)
-        self._run_tclean(**run_tclean_pars)
+        return self._run_tclean(**run_tclean_pars)
+
+    def resize_mask(self, maskname, outputmaskname, shape=[2000,2000,1,1]):
+        """Resizes a .image mask from its current shape to the given shape"""
+        from casatools import image as _ia
+        from skimage.transform import resize # from package scikit-image
+        ia = _ia()
+
+        # scrub the input
+        # a trailing '/' on the image name causes calc to give weird results
+        maskname = maskname.rstrip(" \t\n\r/\\")
+        if (len(shape) < 4): # ra, dec, chan, pol
+            shape += [1 for i in range(4-len(shape))]
+        if shape[2] != 1 or shape[3] != 1:
+            raise RuntimeError("Error: image must have length 1 in the third (chan) and fourth (pol) dimensions")
+
+        # get the shape
+        ia.open(maskname)
+        try:
+            inshape = ia.shape()
+            pixeltype = ia.pixeltype()
+            inpixels = ia.getregion()
+        finally:
+            ia.close()
+            ia.done()
+
+        # populate some pixels
+        pixels = resize(inpixels, shape)
+        for r in range(shape[0]):
+            for d in range(shape[1]):
+                pixels[r][d][0][0] = 0 if (pixels[r][d][0][0] < 0.5) else 1
+
+        # create the new outputmask
+        if (pixeltype == 'dcomplex'):
+            pixeltype = 'cd'
+        else:
+            pixeltype = pixeltype[0] # for 'f'loat, 'd'ouble, or 'c'omplex
+        if os.path.exists(outputmaskname):
+            shutil.rmtree(outputmaskname)
+        ia.fromarray(outputmaskname, pixels=pixels, type=pixeltype)
+        ia.close()
+        ia.done()
