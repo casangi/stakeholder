@@ -312,7 +312,7 @@ class test_j1302(test_vlass_base):
             # runtime with MPI -n 8
             success, report = tstobj.check_runtime(starttime, 5373, success, report)
         else:
-            success, report = tstobj.check_runtime(starttime, stats613['runtime'], success, report)# 2413, success, report)
+            success, report = tstobj.check_runtime(starttime, stats613['runtime'], success, report)
 
         tstobj.assertTrue(success, msg=report)
 
@@ -457,7 +457,7 @@ class test_j1302(test_vlass_base):
                 'tt1': -0.05718548595905304,
                 'alpha': -0.26265749335289,
                 'beam': { 'maj': 3.091102123260498, 'min': 2.5045325756073, 'pos': 11.218000411987305 },
-                'runtime': 940
+                'runtime': 1993 # this is with cfcache
             }
         }
         stats613 = stats613['full'] if (not quick_test) else stats613[f"{quick_imsize}/4"]
@@ -703,7 +703,7 @@ class test_j1302(test_vlass_base):
             '1/4': {
                 'F_nu': 0.2835444715643381,
                 'alpha': -0.39275161146262283,
-                'runtime': 970
+                'runtime': 902
             }
         }
         stats613 = stats613['full'] if (not quick_test) else stats613[f"{quick_imsize}/4"]
@@ -718,7 +718,6 @@ class test_j1302(test_vlass_base):
         curr_stats        = np.squeeze(np.array([f_nu0,            alpha])) # [flux density, alpha]
         onaxis_stats      = np.array([           0.3337,          -0.0476])
         casa613_stats     = np.array([           stats613['F_nu'], stats613['alpha']])
-        # casa613_stats     = np.array([           0.3127, 0.04134])
         success0, report0 = tstobj.check_metrics_flux(curr_stats[0], onaxis_stats[0],  valname="Frac Diff F_nu vs. on-axis", rms_or_std=np.mean(list(rms.values())))
         success1, report1 = tstobj.check_metrics_flux(curr_stats[0], casa613_stats[0], valname="Frac Diff F_nu vs. 6.1.3 image", rms_or_std=np.mean(list(rms.values())))
         success2, report2 = tstobj.check_metrics_alpha_fitted(curr_stats[1], onaxis_stats[1],  valname="Abs Diff alpha vs. on-axis", pcov=pcov)
@@ -814,7 +813,7 @@ class test_j1302(test_vlass_base):
 
         # (f) Runtimes not significantly different relative to previous runs
         # don't test this in jupyter notebooks - runtimes differ too much between machines
-        success, report = tstobj.check_runtime(starttime, stats613['runtime'], success, report)# 7167, success, report)
+        success, report = tstobj.check_runtime(starttime, stats613['runtime'], success, report)
 
         tstobj.assertTrue(success, msg=report)
 
@@ -925,7 +924,7 @@ class test_j1302(test_vlass_base):
             '1/4': {
                 'F_nu': 0.31872469186782837,
                 'beam': { 'min': 3.1795637607574463, 'maj': 2.5885016918182373, 'pos': 11.082575798034668 },
-                'runtime': 404
+                'runtime': 383
             }
         }
         stats613 = stats613['full'] if (not quick_test) else stats613[f"{quick_imsize}/4"]
@@ -939,7 +938,6 @@ class test_j1302(test_vlass_base):
         curr_stats        = np.squeeze(np.array([imstat_vals['max']]))
         onaxis_stats      = np.array([           0.3337])
         casa613_stats     = np.array([           stats613['F_nu']])
-        # casa613_stats     = np.array([           0.320879])
         success1, report1 = tstobj.check_metrics_flux(curr_stats, onaxis_stats, valname="Frac Diff F_nu vs. on-axis", rms_or_std=rms)
         success2, report2 = tstobj.check_metrics_flux(curr_stats, casa613_stats, valname="Frac Diff F_nu vs. 6.1.3 image", rms_or_std=rms)
 
@@ -954,7 +952,6 @@ class test_j1302(test_vlass_base):
         restbeam          = imhead(img1+'.image.pbcor.tt0.subim')['restoringbeam']
         beamstats_curr    = np.array([restbeam['major']['value'], restbeam['minor']['value'], restbeam['positionangle']['value']])
         beamstats_613     = np.array([stats613['beam']['maj'],    stats613['beam']['min'],    stats613['beam']['pos']])
-        # beamstats_613     = np.array([3.16884375,                 2.59194756,                 11.36847878])
         success4, report4 = tstobj.check_fracdiff(beamstats_curr, beamstats_613, valname="Frac Diff Maj, Min, PA vs 6.1.3")
 
         report  = "".join([report0, report1, report2, report4])
@@ -973,7 +970,7 @@ class test_j1302(test_vlass_base):
 
         # (f) Runtimes not significantly different relative to previous runs
         # don't test this in jupyter notebooks - runtimes differ too much between machines
-        success, report = tstobj.check_runtime(starttime, stats613['runtime'], success, report)# 1805, success, report)
+        success, report = tstobj.check_runtime(starttime, stats613['runtime'], success, report)
 
         tstobj.assertTrue(success, msg=report)
 
@@ -1120,7 +1117,6 @@ class test_j1927(test_vlass_base):
         curr_stats    = np.squeeze(np.array([ tt0stats['max'], tt1stats['max'], alphastats['max']]))
         onaxis_stats  = np.array([            0.9509,          0.3601,          0.3796])
         casa613_stats = np.array([            stats613['tt0'], stats613['tt1'], stats613['alpha']])
-        # casa613_stats = np.array([            0.8887,          0.4148,          0.4668])
 
         # (a) tt0 vs 6.1.3, on-axis
         success0, report0 = tstobj.check_metrics_flux(curr_stats[0], onaxis_stats[0],  valname="Frac Diff tt0 vs. on-axis", rms_or_std=rms[0])
@@ -1138,7 +1134,6 @@ class test_j1927(test_vlass_base):
         restbeam          = imhead(img0+'.image.tt0')['restoringbeam']
         beamstats_curr    = np.array([restbeam['major']['value'], restbeam['minor']['value'], restbeam['positionangle']['value']])
         beamstats_613     = np.array([stats613['beam']['maj'],    stats613['beam']['min'],    stats613['beam']['pos']])
-        # beamstats_613     = np.array([2.46035814,                 2.05488539,                 -23.22724915])
         success6, report6 = tstobj.check_fracdiff(beamstats_curr, beamstats_613, valname="Frac Diff Maj, Min, PA vs 6.1.3")
 
         # (e) Confirm presence of model column in resultant MS
@@ -1164,7 +1159,7 @@ class test_j1927(test_vlass_base):
             # runtime with MPI -n 8
             success, report = tstobj.check_runtime(starttime, 7129, success, report)
         else:
-            success, report = tstobj.check_runtime(starttime, stats613['runtime'], success, report)# 4415, success, report)
+            success, report = tstobj.check_runtime(starttime, stats613['runtime'], success, report)
 
         tstobj.assertTrue(success, msg=report)
 
@@ -1361,7 +1356,6 @@ class test_j1927(test_vlass_base):
         curr_stats        = np.squeeze(np.array([f_nu0,            alpha])) # [flux density, alpha]
         onaxis_stats      = np.array([           0.9509,           0.3601])
         casa613_stats     = np.array([           stats613['F_nu'], stats613['alpha']])
-        # casa613_stats     = np.array([           0.88879, 0.4127])
         success0, report0 = tstobj.check_metrics_flux(curr_stats[0], onaxis_stats[0],  valname="Frac Diff F_nu vs. on-axis", rms_or_std=np.mean(list(rms.values())))
         success1, report1 = tstobj.check_metrics_flux(curr_stats[0], casa613_stats[0], valname="Frac Diff F_nu vs. 6.1.3 image", rms_or_std=np.mean(list(rms.values())))
         success2, report2 = tstobj.check_metrics_alpha_fitted(curr_stats[1], onaxis_stats[1],  valname="Abs Diff alpha vs. on-axis", pcov=pcov)
@@ -1426,7 +1420,7 @@ class test_j1927(test_vlass_base):
 
         # (f) Runtimes not significantly different relative to previous runs
         # don't test this in jupyter notebooks - runtimes differ too much between machines
-        success, report = tstobj.check_runtime(starttime, stats613['runtime'], success, report)# 15329, success, report)
+        success, report = tstobj.check_runtime(starttime, stats613['runtime'], success, report)
 
         tstobj.assertTrue(success, msg=report)
 
@@ -1553,7 +1547,6 @@ class test_j1927(test_vlass_base):
         curr_stats        = np.squeeze(np.array([imstat_vals['max']]))
         onaxis_stats      = np.array([           0.9509])
         casa613_stats     = np.array([           stats613['F_nu']])
-        # casa613_stats     = np.array([           0.90649462])
         success1, report1 = tstobj.check_metrics_flux(curr_stats, onaxis_stats,  valname="Frac Diff F_nu vs. on-axis", rms_or_std=rms)
         success2, report2 = tstobj.check_metrics_flux(curr_stats, casa613_stats, valname="Frac Diff F_nu vs. 6.1.3 image", rms_or_std=rms)
 
@@ -1568,7 +1561,6 @@ class test_j1927(test_vlass_base):
         restbeam          = imhead(img1+'.image.pbcor.tt0.subim')['restoringbeam']
         beamstats_curr    = np.array([restbeam['major']['value'], restbeam['minor']['value'], restbeam['positionangle']['value']])
         beamstats_613     = np.array([stats613['beam']['maj'],    stats613['beam']['min'],    stats613['beam']['pos']])
-        # beamstats_613     = np.array([2.5034000873565674,         2.0568439960479736,         -27.06390953063965])
         success4, report4 = tstobj.check_fracdiff(beamstats_curr, beamstats_613, valname="Frac Diff Maj, Min, PA vs 6.1.3")
 
         report  = "".join([report0, report1, report2, report4])
@@ -1580,16 +1572,20 @@ class test_j1927(test_vlass_base):
         ##################################################
         # not part of the jupyter scripts
 
+        # save results for future analysis
+        np.save(tstobj.id()+'.sourceflux.npy', curr_stats)
+        np.save(tstobj.id()+'.beamstats.npy', beamstats_curr)
+
         # (f) Runtimes not significantly different relative to previous runs
         # don't test this in jupyter notebooks - runtimes differ too much between machines
-        success, report = tstobj.check_runtime(starttime, 1543, success, report)
+        success, report = tstobj.check_runtime(starttime, stats613['runtime'], success, report)
 
         tstobj.assertTrue(success, msg=report)
 
 ##############################################
 ##############################################
 
-## List to be run
+## List to be run0
 def suite():
     return [test_j1302, test_j1927]
 
