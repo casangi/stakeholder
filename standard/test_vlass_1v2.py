@@ -13,9 +13,15 @@
 #  2. CASA 6.1.3   ---   pipeline approved version of casa
 #
 # What's good enough?
+# Empirical tolerance:
 #  flux density: 5% goal, 10% ok
 #  spectral index: 0.1 goal, 0.2 ok
-# From https://drive.google.com/file/d/1zw6UeDEoXoxM05oFg3rir0hrCMEJMxkH/view and https://open-confluence.nrao.edu/display/VLASS/Updated+VLASS+survey+science+requirements+and+parameters
+#  reference: https://drive.google.com/file/d/1zw6UeDEoXoxM05oFg3rir0hrCMEJMxkH/view and https://open-confluence.nrao.edu/display/VLASS/Updated+VLASS+survey+science+requirements+and+parameters
+# Noise floor adjusted tolerance:
+#  flux density & F_nu: (2*rms) / max(|expected|,2*rms)
+#  spectral index: truth*sqrt( (2*rms0/truth0)^2 + (2*rms1/truth1)^2 )
+#  reference: https://casadocs.readthedocs.io/en/latest/notebooks/synthesis_imaging.html#Options-in-CASA-for-wideband-imaging --> Search for "Calculating Error in Spectral Index"
+#  reference: Eqn 39 of https://www.aanda.org/index.php?option=com_article&access=doi&doi=10.1051/0004-6361/201117104&Itemid=129#S29
 #
 # Images:
 #  J1302
@@ -266,16 +272,16 @@ class test_j1302(test_vlass_base):
         casa613_stats = np.array([            stats613['tt0'], stats613['tt1'], stats613['alpha']])
 
         # (a) tt0 vs 6.1.3, on-axis
-        success0, report0 = tstobj.check_fracdiff(curr_stats[0], onaxis_stats[0],  valname="Frac Diff tt0 vs. on-axis")
-        success1, report1 = tstobj.check_fracdiff(curr_stats[0], casa613_stats[0], valname="Frac Diff tt0 vs. 6.1.3 image")
+        success0, report0 = tstobj.check_metrics_flux(curr_stats[0], onaxis_stats[0],  valname="Frac Diff tt0 vs. on-axis", rms_or_std=rms[0])
+        success1, report1 = tstobj.check_metrics_flux(curr_stats[0], casa613_stats[0], valname="Frac Diff tt0 vs. 6.1.3 image", rms_or_std=rms[0])
 
         # (b) tt1 vs 6.1.3, on-axis
-        success2, report2 = tstobj.check_fracdiff(curr_stats[1], onaxis_stats[1],  valname="Frac Diff tt1 vs. on-axis")
-        success3, report3 = tstobj.check_fracdiff(curr_stats[1], casa613_stats[1], valname="Frac Diff tt1 vs. 6.1.3 image")
+        success2, report2 = tstobj.check_metrics_flux(curr_stats[1], onaxis_stats[1],  valname="Frac Diff tt1 vs. on-axis", rms_or_std=rms[1])
+        success3, report3 = tstobj.check_metrics_flux(curr_stats[1], casa613_stats[1], valname="Frac Diff tt1 vs. 6.1.3 image", rms_or_std=rms[1])
 
         # (c) alpha images
-        success4, report4 = tstobj.check_absdiff(curr_stats[2], onaxis_stats[2],  valname="Abs Diff alpha vs. on-axis")
-        success5, report5 = tstobj.check_absdiff(curr_stats[2], casa613_stats[2], valname="Abs Diff alpha vs. 6.1.3 image")
+        success4, report4 = tstobj.check_metrics_alpha(curr_stats[2], onaxis_stats[2],  valname="Abs Diff alpha vs. on-axis", rmss_or_stds=rms)
+        success5, report5 = tstobj.check_metrics_alpha(curr_stats[2], casa613_stats[2], valname="Abs Diff alpha vs. 6.1.3 image", rmss_or_stds=rms)
 
         # (d) beamsize comparison vs 6.1.3
         restbeam          = imhead(img0+'.image.tt0')['restoringbeam']
@@ -469,16 +475,16 @@ class test_j1302(test_vlass_base):
         casa613_stats=np.array([        stats613['tt0'], stats613['tt1'], stats613['alpha']])
 
         # (a) tt0 vs 6.1.3, on-axis
-        success0, report0 = tstobj.check_fracdiff(curr_stats[0], onaxis_stats[0],  valname="Frac Diff tt0 vs. on-axis")
-        success1, report1 = tstobj.check_fracdiff(curr_stats[0], casa613_stats[0], valname="Frac Diff tt0 vs. 6.1.3 image")
+        success0, report0 = tstobj.check_metrics_flux(curr_stats[0], onaxis_stats[0],  valname="Frac Diff tt0 vs. on-axis", rms_or_std=rms[0])
+        success1, report1 = tstobj.check_metrics_flux(curr_stats[0], casa613_stats[0], valname="Frac Diff tt0 vs. 6.1.3 image", rms_or_std=rms[0])
 
         # (b) tt1 vs 6.1.3, on-axis
-        success2, report2 = tstobj.check_fracdiff(curr_stats[1], onaxis_stats[1],  valname="Frac Diff tt1 vs. on-axis")
-        success3, report3 = tstobj.check_fracdiff(curr_stats[1], casa613_stats[1], valname="Frac Diff tt1 vs. 6.1.3 image")
+        success2, report2 = tstobj.check_metrics_flux(curr_stats[1], onaxis_stats[1],  valname="Frac Diff tt1 vs. on-axis", rms_or_std=rms[1])
+        success3, report3 = tstobj.check_metrics_flux(curr_stats[1], casa613_stats[1], valname="Frac Diff tt1 vs. 6.1.3 image", rms_or_std=rms[1])
 
         # (c) alpha images
-        success4, report4 = tstobj.check_absdiff(curr_stats[2], onaxis_stats[2],  valname="Abs Diff alpha vs. on-axis")
-        success5, report5 = tstobj.check_absdiff(curr_stats[2], casa613_stats[2], valname="Abs Diff alpha vs. 6.1.3 image")
+        success4, report4 = tstobj.check_metrics_alpha(curr_stats[2], onaxis_stats[2],  valname="Abs Diff alpha vs. on-axis", rmss_or_stds=rms)
+        success5, report5 = tstobj.check_metrics_alpha(curr_stats[2], casa613_stats[2], valname="Abs Diff alpha vs. 6.1.3 image", rmss_or_stds=rms)
 
         # (d) beamsize comparison vs 6.1.3
         restbeam          = imhead(img1+'.image.tt0')['restoringbeam']
@@ -709,13 +715,14 @@ class test_j1302(test_vlass_base):
         # compare to alpha (ground truth), and 6.1.3 (fitted for spws 2, 8, 14 from mosaic gridder in CASA 6.1.3)
         alpha = popt[0]
         f_nu0 = 10**popt[1]
-        curr_stats        = np.squeeze(np.array([f_nu0,  alpha])) # [flux density, alpha]
-        onaxis_stats      = np.array([           0.3337, -0.0476])
-        casa613_stats     = np.array([           0.3127, 0.04134])
-        success0, report0 = tstobj.check_fracdiff(curr_stats[0], onaxis_stats[0],  valname="Frac Diff F_nu vs. on-axis")
-        success1, report1 = tstobj.check_fracdiff(curr_stats[0], casa613_stats[0], valname="Frac Diff F_nu vs. 6.1.3 image")
-        success2, report2 = tstobj.check_absdiff(curr_stats[1], onaxis_stats[1],  valname="Abs Diff alpha vs. on-axis")
-        success3, report3 = tstobj.check_absdiff(curr_stats[1], casa613_stats[1], valname="Abs Diff alpha vs. 6.1.3 image")
+        curr_stats        = np.squeeze(np.array([f_nu0,            alpha])) # [flux density, alpha]
+        onaxis_stats      = np.array([           0.3337,          -0.0476])
+        casa613_stats     = np.array([           stats613['F_nu'], stats613['alpha']])
+        # casa613_stats     = np.array([           0.3127, 0.04134])
+        success0, report0 = tstobj.check_metrics_flux(curr_stats[0], onaxis_stats[0],  valname="Frac Diff F_nu vs. on-axis", rms_or_std=np.mean(list(rms.values())))
+        success1, report1 = tstobj.check_metrics_flux(curr_stats[0], casa613_stats[0], valname="Frac Diff F_nu vs. 6.1.3 image", rms_or_std=np.mean(list(rms.values())))
+        success2, report2 = tstobj.check_metrics_alpha_fitted(curr_stats[1], onaxis_stats[1],  valname="Abs Diff alpha vs. on-axis", pcov=pcov)
+        success3, report3 = tstobj.check_metrics_alpha_fitted(curr_stats[1], casa613_stats[1], valname="Abs Diff alpha vs. 6.1.3 image", pcov=pcov)
 
         spwstats_613={
             'full': {
@@ -777,15 +784,15 @@ class test_j1302(test_vlass_base):
         report4 = []
         for spw in spws:
             # (h) IQUV flux densities of all three spws: 6.1.3
-            successN, reportN = tstobj.check_fracdiff(spwstats[spw]['IQUV'], spwstats_613[spw]['IQUV'],    valname=f"Stokes Comparison (spw {spw}), Frac Diff IQUV vs 6.1.3")
+            successN, reportN = tstobj.check_metrics_flux(spwstats[spw]['IQUV'], spwstats_613[spw]['IQUV'],    valname=f"Stokes Comparison (spw {spw}), Frac Diff IQUV vs 6.1.3", rms_or_std=np.mean(list(rms.values())))
             success4.append(successN)
             report4.append(reportN)
             # (i) IQUV flux densities of all three spws: on-axis measurements
-            successN, reportN = tstobj.check_fracdiff(spwstats[spw]['IQUV'], spwstats_onaxis[spw]['IQUV'], valname=f"Stokes Comparison (spw {spw}), Frac Diff IQUV vs on-axis")
+            successN, reportN = tstobj.check_metrics_flux(spwstats[spw]['IQUV'], spwstats_onaxis[spw]['IQUV'], valname=f"Stokes Comparison (spw {spw}), Frac Diff IQUV vs on-axis", rms_or_std=np.mean(list(rms.values())))
             success4.append(successN)
             report4.append(reportN)
             # (j) Beam of all three spws:                6.1.3
-            successN, reportN = tstobj.check_fracdiff(spwstats[spw]['beam'], spwstats_613[spw]['beam'],    valname=f"Stokes Comparison (spw {spw}), Frac Diff Beam vs 6.1.3")
+            successN, reportN = tstobj.check_fracdiff(spwstats[spw]['beam'], spwstats_613[spw]['beam'],        valname=f"Stokes Comparison (spw {spw}), Frac Diff Beam vs 6.1.3")
             success4.append(successN)
             report4.append(reportN)
 
@@ -931,9 +938,10 @@ class test_j1302(test_vlass_base):
         imstat_vals       = imstat(imagename=img1+'.image.pbcor.tt0.subim',box=f"{halfsize},{halfsize},{halfsize},{halfsize}")
         curr_stats        = np.squeeze(np.array([imstat_vals['max']]))
         onaxis_stats      = np.array([           0.3337])
-        casa613_stats     = np.array([           0.320879])
-        success1, report1 = tstobj.check_fracdiff(curr_stats, onaxis_stats, valname="Frac Diff F_nu vs. on-axis")
-        success2, report2 = tstobj.check_fracdiff(curr_stats, casa613_stats, valname="Frac Diff F_nu vs. 6.1.3 image")
+        casa613_stats     = np.array([           stats613['F_nu']])
+        # casa613_stats     = np.array([           0.320879])
+        success1, report1 = tstobj.check_metrics_flux(curr_stats, onaxis_stats, valname="Frac Diff F_nu vs. on-axis", rms_or_std=rms)
+        success2, report2 = tstobj.check_metrics_flux(curr_stats, casa613_stats, valname="Frac Diff F_nu vs. 6.1.3 image", rms_or_std=rms)
 
         # (b) tt1 vs 6.1.3, on-axis
         # no tt1 images for this test, skip
@@ -1115,16 +1123,16 @@ class test_j1927(test_vlass_base):
         # casa613_stats = np.array([            0.8887,          0.4148,          0.4668])
 
         # (a) tt0 vs 6.1.3, on-axis
-        success0, report0 = tstobj.check_fracdiff(curr_stats[0], onaxis_stats[0],  valname="Frac Diff tt0 vs. on-axis")
-        success1, report1 = tstobj.check_fracdiff(curr_stats[0], casa613_stats[0], valname="Frac Diff tt0 vs. 6.1.3 image")
+        success0, report0 = tstobj.check_metrics_flux(curr_stats[0], onaxis_stats[0],  valname="Frac Diff tt0 vs. on-axis", rms_or_std=rms[0])
+        success1, report1 = tstobj.check_metrics_flux(curr_stats[0], casa613_stats[0], valname="Frac Diff tt0 vs. 6.1.3 image", rms_or_std=rms[0])
 
         # (b) tt1 vs 6.1.3, on-axis
-        success2, report2 = tstobj.check_fracdiff(curr_stats[1], onaxis_stats[1],  valname="Frac Diff tt1 vs. on-axis")
-        success3, report3 = tstobj.check_fracdiff(curr_stats[1], casa613_stats[1], valname="Frac Diff tt1 vs. 6.1.3 image")
+        success2, report2 = tstobj.check_metrics_flux(curr_stats[1], onaxis_stats[1],  valname="Frac Diff tt1 vs. on-axis", rms_or_std=rms[1])
+        success3, report3 = tstobj.check_metrics_flux(curr_stats[1], casa613_stats[1], valname="Frac Diff tt1 vs. 6.1.3 image", rms_or_std=rms[1])
 
         # (c) alpha images
-        success4, report4 = tstobj.check_absdiff(curr_stats[2], onaxis_stats[2],  valname="Abs Diff alpha vs. on-axis")
-        success5, report5 = tstobj.check_absdiff(curr_stats[2], casa613_stats[2], valname="Abs Diff alpha vs. 6.1.3 image")
+        success4, report4 = tstobj.check_metrics_alpha(curr_stats[2], onaxis_stats[2],  valname="Abs Diff alpha vs. on-axis", rmss_or_stds=rms)
+        success5, report5 = tstobj.check_metrics_alpha(curr_stats[2], casa613_stats[2], valname="Abs Diff alpha vs. 6.1.3 image", rmss_or_stds=rms)
 
         # (d) beamsize comparison vs 6.1.3
         restbeam          = imhead(img0+'.image.tt0')['restoringbeam']
@@ -1350,13 +1358,14 @@ class test_j1927(test_vlass_base):
         # compare to alpha (ground truth), and 6.1.3 (fitted for spws 2, 8, 14 from mosaic gridder in CASA 6.1.3)
         alpha = popt[0]
         f_nu0 = 10**popt[1]
-        curr_stats        = np.squeeze(np.array([f_nu0,   alpha])) # [flux density, alpha]
-        onaxis_stats      = np.array([           0.3337, -0.0476])
-        casa613_stats     = np.array([           0.88879, 0.4127])
-        success0, report0 = tstobj.check_fracdiff(curr_stats[0], onaxis_stats[0],  valname="Frac Diff F_nu vs. on-axis")
-        success1, report1 = tstobj.check_fracdiff(curr_stats[0], casa613_stats[0], valname="Frac Diff F_nu vs. 6.1.3 image")
-        success2, report2 = tstobj.check_absdiff(curr_stats[1], onaxis_stats[1],  valname="Abs Diff alpha vs. on-axis")
-        success3, report3 = tstobj.check_absdiff(curr_stats[1], casa613_stats[1], valname="Abs Diff alpha vs. 6.1.3 image")
+        curr_stats        = np.squeeze(np.array([f_nu0,            alpha])) # [flux density, alpha]
+        onaxis_stats      = np.array([           0.9509,           0.3601])
+        casa613_stats     = np.array([           stats613['F_nu'], stats613['alpha']])
+        # casa613_stats     = np.array([           0.88879, 0.4127])
+        success0, report0 = tstobj.check_metrics_flux(curr_stats[0], onaxis_stats[0],  valname="Frac Diff F_nu vs. on-axis", rms_or_std=np.mean(list(rms.values())))
+        success1, report1 = tstobj.check_metrics_flux(curr_stats[0], casa613_stats[0], valname="Frac Diff F_nu vs. 6.1.3 image", rms_or_std=np.mean(list(rms.values())))
+        success2, report2 = tstobj.check_metrics_alpha_fitted(curr_stats[1], onaxis_stats[1],  valname="Abs Diff alpha vs. on-axis", pcov=pcov)
+        success3, report3 = tstobj.check_metrics_alpha_fitted(curr_stats[1], casa613_stats[1], valname="Abs Diff alpha vs. 6.1.3 image", pcov=pcov)
 
         spwstats_613= {
             'full': {
@@ -1389,13 +1398,13 @@ class test_j1927(test_vlass_base):
         report4 = []
         for spw in spws:
             # (h) IQUV flux densities of all three spws:              6.1.3
-            successN, reportN = tstobj.check_fracdiff(spwstats[spw]['IQUV'], spwstats_613[spw]['IQUV'], valname=f"Stokes Comparison (spw {spw}), Frac Diff IQUV vs 6.1.3")
+            successN, reportN = tstobj.check_metrics_flux(spwstats[spw]['IQUV'], spwstats_613[spw]['IQUV'], valname=f"Stokes Comparison (spw {spw}), Frac Diff IQUV vs 6.1.3", rms_or_std=np.mean(list(rms.values())))
             success4.append(successN)
             report4.append(reportN)
             # (i) IQUV flux densities of all three spws:              on-axis measurements
             # N/A: no no-axis measurements available in VLASS_mosaic_cube_stakeholder_test_script.py
             # (j) Beam of all three spws:                             6.1.3
-            successN, reportN = tstobj.check_fracdiff(spwstats[spw]['beam'], spwstats_613[spw]['beam'], valname=f"Stokes Comparison (spw {spw}), Frac Diff Beam vs 6.1.3")
+            successN, reportN = tstobj.check_fracdiff(spwstats[spw]['beam'], spwstats_613[spw]['beam'],     valname=f"Stokes Comparison (spw {spw}), Frac Diff Beam vs 6.1.3")
             success4.append(successN)
             report4.append(reportN)
 
@@ -1543,9 +1552,10 @@ class test_j1927(test_vlass_base):
         imstat_vals       = imstat(imagename=img1+'.image.pbcor.tt0.subim', box=box)
         curr_stats        = np.squeeze(np.array([imstat_vals['max']]))
         onaxis_stats      = np.array([           0.9509])
-        casa613_stats     = np.array([           0.90649462])
-        success1, report1 = tstobj.check_fracdiff(curr_stats, onaxis_stats,  valname="Frac Diff F_nu vs. on-axis")
-        success2, report2 = tstobj.check_fracdiff(curr_stats, casa613_stats, valname="Frac Diff F_nu vs. 6.1.3 image")
+        casa613_stats     = np.array([           stats613['F_nu']])
+        # casa613_stats     = np.array([           0.90649462])
+        success1, report1 = tstobj.check_metrics_flux(curr_stats, onaxis_stats,  valname="Frac Diff F_nu vs. on-axis", rms_or_std=rms)
+        success2, report2 = tstobj.check_metrics_flux(curr_stats, casa613_stats, valname="Frac Diff F_nu vs. 6.1.3 image", rms_or_std=rms)
 
         # (b) tt1 vs 6.1.3, on-axis
         # no tt1 images for this test, skip
