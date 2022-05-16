@@ -110,7 +110,7 @@ from datetime import datetime
 from casatasks import casalog, impbcor, imdev, imhead, imsubimage, imstat, immath
 from casatasks.private.parallel.parallel_task_helper import ParallelTaskHelper
 
-from baseclass.vlass_base_class import test_vlass_base
+from scripts.baseclass.vlass_base_class import test_vlass_base
 
 quick_test = True
 if ('FULL_TEST' in os.environ):
@@ -254,7 +254,7 @@ class test_j1302(test_vlass_base):
                 'tt1': -0.004495048895478249,
                 'alpha': -0.015146981924772263,
                 'beam': { 'maj': 3.138805627822876, 'min': 2.5604472160339355, 'pos': 10.93341064453125 },
-                'runtime': 385
+                'runtime': 417
             }
         }
         stats613 = stats613['full'] if (not quick_test) else stats613[f"{quick_imsize}/4"]
@@ -298,7 +298,19 @@ class test_j1302(test_vlass_base):
 
         ##############################################################
         # %% Compare Expected Values [test_j1302_mosaic_noncube] end @
+        # %% Generate Images [test_j1302_mosaic_noncube] start       @
         ##############################################################
+
+        if quick_test:
+            self.mom8_creator(image=img0+'.image.tt0', range_list=[0, 0.32])
+            self.mom8_creator(image=img0+'.image.tt1', range_list=[0, 0.05])
+        else:
+            self.mom8_creator(image=img0+'.image.tt0', range_list=[0, 0.30])
+            self.mom8_creator(image=img0+'.image.tt1', range_list=[0, 0.01])
+
+        ######################################################
+        # %% Generate Images [test_j1302_mosaic_noncube] end @
+        ######################################################
         # not part of the jupyter scripts
 
         # save results for future analysis
@@ -450,7 +462,7 @@ class test_j1302(test_vlass_base):
                 'tt1': -0.01514572,
                 'alpha': -0.04771062,
                 'beam': { 'maj': 3.07221413,        'min': 2.49312615,      'pos': 11.04310322 },
-                'runtime': 21179 # 12219 with cfcache, 5853 with mpi and cfcache
+                'runtime': 21179
             },
             '1/4': {
                 'tt0': 0.21771885454654694,
@@ -501,7 +513,17 @@ class test_j1302(test_vlass_base):
 
         #########################################################
         # %% Compare Expected Values [test_j1302_awproject] end @
+        # %% Generate Images [test_j1302_awproject] start       @
         #########################################################
+
+        if quick_test:
+            self.mom8_creator(image=img1+'.image.tt0', range_list=[0, 0.22])
+        else:
+            self.mom8_creator(image=img1+'.image.tt0', range_list=[0, 0.32])
+
+        #################################################
+        # %% Generate Images [test_j1302_awproject] end @
+        #################################################
         # not part of the jupyter scripts
 
         # save results for future analysis
@@ -513,7 +535,11 @@ class test_j1302(test_vlass_base):
 
         # (f) Runtimes not significantly different relative to previous runs
         # don't test this in jupyter notebooks - runtimes differ too much between machines
-        success, report = tstobj.check_runtime(starttime, stats613['runtime'], success, report)
+        if ParallelTaskHelper.isMPIEnabled():
+            # runtime with MPI -n 8
+            success, report = tstobj.check_runtime(starttime, 9594, success, report) # 5853 with cfcache
+        else:
+            success, report = tstobj.check_runtime(starttime, stats613['runtime'], success, report)# 20955, success, report) # 12219 with cfcache
 
         tstobj.assertTrue(success, msg=report)
 
@@ -797,7 +823,21 @@ class test_j1302(test_vlass_base):
 
         ###########################################################
         # %% Compare Expected Values [test_j1302_mosaic_cube] end @
+        # %% Generate Images [test_j1302_mosaic_cube] start       @
         ###########################################################
+
+        if quick_test:
+            self.mom8_creator(image=iname('iter2', '0', 'IQUV')+'.image.tt0', range_list=[0, 0.32])
+            self.mom8_creator(image=iname('iter2', '1', 'IQUV')+'.image.tt0', range_list=[0, 0.32])
+            self.mom8_creator(image=iname('iter2', '2', 'IQUV')+'.image.tt0', range_list=[0, 0.26])
+        else:
+            self.mom8_creator(image=iname('iter2', '0', 'IQUV')+'.image.tt0', range_list=[0, 0.31])
+            self.mom8_creator(image=iname('iter2', '1', 'IQUV')+'.image.tt0', range_list=[0, 0.33])
+            self.mom8_creator(image=iname('iter2', '2', 'IQUV')+'.image.tt0', range_list=[0, 0.31])
+
+        ###################################################
+        # %% Generate Images [test_j1302_mosaic_cube] end @
+        ###################################################
         # not part of the jupyter scripts
 
         # save results for future analysis
@@ -956,7 +996,17 @@ class test_j1302(test_vlass_base):
 
         ##################################################
         # %% Compare Expected Values [test_j1302_ql] end @
+        # %% Generate Images [test_j1302_ql] start       @
         ##################################################
+
+        if quick_test:
+            self.mom8_creator(image=img1+'.image.pbcor.tt0.subim', range_list=[0, 0.32])
+        else:
+            self.mom8_creator(image=img1+'.image.pbcor.tt0.subim', range_list=[0, 0.32])
+
+        ##########################################
+        # %% Generate Images [test_j1302_ql] end @
+        ##########################################
         # not part of the jupyter scripts
 
         # save results for future analysis
@@ -1097,7 +1147,7 @@ class test_j1927(test_vlass_base):
                 'tt1': 0.32516300678253174,
                 'alpha': 0.3701357841491699,
                 'beam': { 'min': 2.3685483932495117, 'maj': 1.971137285232544, 'pos': -24.036651611328125 },
-                'runtime': 423
+                'runtime': 436
             }
         }
         stats613 = stats613['full'] if (not quick_test) else stats613[f"{quick_imsize}/4"]
@@ -1141,7 +1191,19 @@ class test_j1927(test_vlass_base):
 
         ##############################################################
         # %% Compare Expected Values [test_j1927_mosaic_noncube] end @
+        # %% Generate Images [test_j1927_mosaic_noncube] start       @
         ##############################################################
+
+        if quick_test:
+            self.mom8_creator(image=img0+'.image.tt0', range_list=[0, 0.88])
+            self.mom8_creator(image=img0+'.image.tt1', range_list=[0, 0.33])
+        else:
+            self.mom8_creator(image=img0+'.image.tt0', range_list=[0, 0.89])
+            self.mom8_creator(image=img0+'.image.tt1', range_list=[0, 0.42])
+
+        ######################################################
+        # %% Generate Images [test_j1927_mosaic_noncube] end @
+        ######################################################
         # not part of the jupyter scripts
 
         # save results for future analysis
@@ -1337,7 +1399,7 @@ class test_j1927(test_vlass_base):
             '1/4': {
                 'F_nu': 0.8809638356491677,
                 'alpha': 0.2955769626453426,
-                'runtime': 970
+                'runtime': 1022
             }
         }
         stats613 = stats613['full'] if (not quick_test) else stats613[f"{quick_imsize}/4"]
@@ -1402,9 +1464,23 @@ class test_j1927(test_vlass_base):
         success = success0 and success1 and success2 and success3 and all(success4) and tstobj.th.check_final(report)
         casalog.post(f"{report}\nSuccess: {success}", "INFO")
 
-        ###########################################################
+        ##############################################################
         # %% Compare Expected Values [test_j1927_mosaic_cube] end @
-        ###########################################################
+        # %% Generate Images [test_j1927_mosaic_cube] start       @
+        ##############################################################
+
+        if quick_test:
+            self.mom8_creator(image=iname('iter2', '0', 'IQUV')+'.image.tt0', range_list=[0, 0.78])
+            self.mom8_creator(image=iname('iter2', '1', 'IQUV')+'.image.tt0', range_list=[0, 0.88])
+            self.mom8_creator(image=iname('iter2', '2', 'IQUV')+'.image.tt0', range_list=[0, 0.92])
+        else:
+            self.mom8_creator(image=iname('iter2', '0', 'IQUV')+'.image.tt0', range_list=[0, 0.76])
+            self.mom8_creator(image=iname('iter2', '1', 'IQUV')+'.image.tt0', range_list=[0, 0.87])
+            self.mom8_creator(image=iname('iter2', '2', 'IQUV')+'.image.tt0', range_list=[0, 0.96])
+
+        ######################################################
+        # %% Generate Images [test_j1927_mosaic_cube] end @
+        ######################################################
         # not part of the jupyter scripts
 
         # save results for future analysis
@@ -1528,7 +1604,7 @@ class test_j1927(test_vlass_base):
             '1/4': {
                 'F_nu': 0.8989461064338684,
                 'beam': { 'min': 2.487116813659668,  'maj': 2.04219126701355,   'pos': -27.007415771484375 },
-                'runtime': 830
+                'runtime': 826
             }
         }
         stats613 = stats613['full'] if (not quick_test) else stats613[f"{quick_imsize}/4"]
@@ -1565,7 +1641,17 @@ class test_j1927(test_vlass_base):
 
         ##################################################
         # %% Compare Expected Values [test_j1927_ql] end @
+        # %% Generate Images [test_j1927_ql] start       @
         ##################################################
+
+        if quick_test:
+            self.mom8_creator(image=img1+'.image.pbcor.tt0.subim', range_list=[0, 0.90])
+        else:
+            self.mom8_creator(image=img1+'.image.pbcor.tt0.subim', range_list=[0, 0.90])
+
+        ##########################################
+        # %% Generate Images [test_j1927_ql] end @
+        ##########################################
         # not part of the jupyter scripts
 
         # save results for future analysis
